@@ -1,0 +1,35 @@
+{
+  "id": "rush_hour",
+  "name": "Rush Hour",
+  "description": "Heavy commuter traffic with a late traffic spike on the central avenues.",
+  "network": {
+    "type": "grid",
+    "cols": 8,
+    "rows": 6,
+    "block": 500,
+    "seed": 1
+  },
+  "vehicle_count": 220,
+  "spawn_rate": 4.0,
+  "duration": 600,
+  "seed": 7,
+  "vehicle_types": {
+    "normal": 0.82,
+    "bus": 0.07,
+    "truck": 0.09,
+    "emergency": 0.02
+  },
+  "traffic_lights": {
+    "green_duration": 12.0,
+    "red_duration": 12.0
+  },
+  "congestion_model": "linear",
+  "events": [
+    {
+      "type": "traffic_spike",
+      "timestamp": 200,
+      "duration": 60,
+      "payload": {"count": 3}
+    }
+  ]
+}

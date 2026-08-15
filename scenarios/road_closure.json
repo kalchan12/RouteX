@@ -1,0 +1,40 @@
+{
+  "id": "road_closure",
+  "name": "Road Closure",
+  "description": "A central road is closed for construction for a long stretch, testing rerouting.",
+  "network": {
+    "type": "grid",
+    "cols": 8,
+    "rows": 6,
+    "block": 500,
+    "seed": 1
+  },
+  "vehicle_count": 150,
+  "spawn_rate": 3.0,
+  "duration": 600,
+  "seed": 21,
+  "vehicle_types": {
+    "normal": 0.85,
+    "bus": 0.05,
+    "truck": 0.08,
+    "emergency": 0.02
+  },
+  "traffic_lights": {
+    "green_duration": 15.0,
+    "red_duration": 15.0
+  },
+  "congestion_model": "linear",
+  "events": [
+    {
+      "type": "road_closure",
+      "timestamp": 100,
+      "duration": 200,
+      "road_id": "v_3_2"
+    },
+    {
+      "type": "road_reopening",
+      "timestamp": 300,
+      "road_id": "v_3_2"
+    }
+  ]
+}
