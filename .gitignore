@@ -1,0 +1,60 @@
+# --- Secrets & local configuration (mandatory) ---
+.env
+.env.*
+!.env.example
+
+# --- Credentials / keys / certificates ---
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# --- Node / frontend ---
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.eslintcache
+.vitest
+
+# --- Editors / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Runtime data ---
+postgres_data/
+redis_data/
+*.sqlite
+*.sqlite3
+*.db
+routex.db
