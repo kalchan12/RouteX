@@ -10,29 +10,14 @@
 *.p12
 *.pfx
 
-# --- Python ---
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-build/
-dist/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.venv/
-venv/
-
 # --- Node / frontend ---
 node_modules/
-.next/
-out/
+dist/
 coverage/
 *.tsbuildinfo
 .eslintcache
 .vitest
+.vite
 
 # --- Editors / IDE ---
 .vscode/
@@ -52,9 +37,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # --- Runtime data ---
-postgres_data/
-redis_data/
+*.db
 *.sqlite
 *.sqlite3
-*.db
-routex.db
+
+# --- Playwright ---
+playwright-report/
+test-results/

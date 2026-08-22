@@ -1,8 +1,0 @@
-packages:
-  - 'shared'
-  - 'engine'
-  - 'worker'
-  - 'web'
-  - 'api'
-allowBuilds:
-  esbuild: true

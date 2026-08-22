@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@routex/core/*": ["src/core/*"],
+      "@routex/workers/*": ["src/workers/*"],
+      "@routex/types/*": ["src/types/*"],
+      "@routex/components/*": ["src/components/*"],
+      "@routex/hooks/*": ["src/hooks/*"],
+      "@routex/scenarios/*": ["src/scenarios/*"],
+      "@routex/stores/*": ["src/stores/*"],
+      "@routex/db/*": ["src/db/*"],
+      "@routex/lib/*": ["src/lib/*"]
+    }
+  },
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
