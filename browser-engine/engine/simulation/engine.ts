@@ -11,7 +11,7 @@ import {
   RoadStatus,
   SimulationStatus,
   SimulationConfig as SimConfig 
-} from '../shared/types';
+} from '../../shared/types';
 import { SimulationClock } from './clock';
 import { EventQueue, createEvent } from './events';
 import { buildNetwork } from '../network/networkBuilder';
@@ -21,8 +21,13 @@ import { buildLights, stepLights, isGreen, getLightForNode } from '../traffic/tr
 import { buildSnapshot, SimulationSnapshot } from './state';
 import { createDijkstra, createAStar, defaultCost } from '../routing/algorithms';
 
-export interface SimulationEngineConfig extends SimConfig {
+export interface SimulationEngineConfig {
   scenario: ScenarioConfig;
+  scenarioId?: string;
+  algorithm?: string;
+  seed?: number;
+  maxTicks?: number;
+  speed?: number;
 }
 
 export class SimulationEngine {

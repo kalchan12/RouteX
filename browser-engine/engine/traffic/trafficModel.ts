@@ -1,4 +1,4 @@
-import { Road } from '../shared/types';
+import { Road } from '../../shared/types';
 import { congestionFactor, calculateCongestion } from './congestion';
 import { updateRoadDynamicState } from '../network/edge';
 

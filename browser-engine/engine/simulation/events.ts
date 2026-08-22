@@ -1,4 +1,4 @@
-import { SimulationEvent, EventType } from '../shared/types';
+import { SimulationEvent, EventType } from '../../shared/types';
 
 export class EventQueue {
   private events: SimulationEvent[] = [];

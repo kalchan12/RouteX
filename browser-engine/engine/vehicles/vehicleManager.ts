@@ -1,4 +1,4 @@
-import { Vehicle, VehicleType, Route, RoadNetwork, Road } from '../shared/types';
+import { Vehicle, VehicleType, Route, RoadNetwork, Road, Node } from '../../shared/types';
 import { createRoadNetwork, outgoingEdges, getRoad, isTraversable } from '../network';
 
 export interface VehicleManagerConfig {
@@ -51,8 +51,8 @@ export class VehicleManager {
   }
 
   private spawnRandomVehicle(): void {
-    const origins = Array.from(this.network.nodes.values()).filter(n => n.type === 'origin');
-    const destinations = Array.from(this.network.nodes.values()).filter(n => n.type === 'destination');
+    const origins = Array.from(this.network.nodes.values()).filter((n: Node) => n.type === 'origin');
+    const destinations = Array.from(this.network.nodes.values()).filter((n: Node) => n.type === 'destination');
     
     if (origins.length === 0 || destinations.length === 0) return;
 
@@ -74,8 +74,8 @@ export class VehicleManager {
   }
 
   spawnEmergency(count: number): void {
-    const origins = Array.from(this.network.nodes.values()).filter(n => n.type === 'origin');
-    const hospitals = Array.from(this.network.nodes.values()).filter(n => n.type === 'hospital');
+    const origins = Array.from(this.network.nodes.values()).filter((n: Node) => n.type === 'origin');
+    const hospitals = Array.from(this.network.nodes.values()).filter((n: Node) => n.type === 'hospital');
     
     if (origins.length === 0 || hospitals.length === 0) return;
 

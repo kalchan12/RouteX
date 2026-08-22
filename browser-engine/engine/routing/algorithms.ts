@@ -1,4 +1,4 @@
-import { RoadNetwork, Road, Route, CostFunction } from '../shared/types';
+import { RoadNetwork, Road, Route, CostFunction } from '../../shared/types';
 import { getRoad, neighbors, isTraversable } from '../network';
 
 export interface RoutingAlgorithm {

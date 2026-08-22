@@ -108,6 +108,25 @@ export enum SimulationStatus {
   ERROR = 'error',
 }
 
+export interface SimulationSnapshot {
+  tick: number;
+  time: number;
+  status: SimulationStatus | string;
+  vehicles: Vehicle[];
+  vehicleCount: number;
+  arrivedCount: number;
+  networkSummary: { nodes: number; edges: number; closed: number };
+  network: { nodes: Node[]; edges: Road[] };
+  metrics: {
+    avgTravelTime: number;
+    avgSpeed: number;
+    totalThroughput: number;
+    avgCongestion: number;
+    totalWaitingTime: number;
+    emergencyResponseTime: number | null;
+  };
+}
+
 export interface SimulationConfig {
   scenarioId: string;
   algorithm: string;

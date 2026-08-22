@@ -1,4 +1,4 @@
-import { Node, NodeType, Road, RoadStatus, RoadType, RoadNetwork } from '../shared/types';
+import { Node, NodeType } from '../../shared/types';
 
 export function createNode(
   id: string,

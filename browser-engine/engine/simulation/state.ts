@@ -1,24 +1,6 @@
 import { SimulationEngine } from './engine';
-import { Vehicle, Node, Road } from '../shared/types';
-
-export interface SimulationSnapshot {
-  tick: number;
-  time: number;
-  status: string;
-  vehicles: Vehicle[];
-  vehicleCount: number;
-  arrivedCount: number;
-  networkSummary: { nodes: number; edges: number; closed: number };
-  network: { nodes: Node[]; edges: Road[] };
-  metrics: {
-    avgTravelTime: number;
-    avgSpeed: number;
-    totalThroughput: number;
-    avgCongestion: number;
-    totalWaitingTime: number;
-    emergencyResponseTime: number | null;
-  };
-}
+import { SimulationSnapshot, Vehicle, Node, Road } from '../../shared/types';
+export type { SimulationSnapshot };
 
 export function buildSnapshot(engine: SimulationEngine): SimulationSnapshot {
   const vehicles = engine.getVehicles();

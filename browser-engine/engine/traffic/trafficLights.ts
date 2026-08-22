@@ -1,4 +1,4 @@
-import { ScenarioTrafficLight } from '../shared/types';
+import { ScenarioTrafficLight } from '../../shared/types';
 
 export interface TrafficLight {
   nodeId: string;

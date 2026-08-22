@@ -1,4 +1,4 @@
-import { Road, RoadStatus, RoadType } from '../shared/types';
+import { Road, RoadStatus, RoadType } from '../../shared/types';
 
 export function createRoad(params: {
   id: string;

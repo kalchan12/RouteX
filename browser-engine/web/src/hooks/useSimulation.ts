@@ -1,28 +1,27 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ScenarioConfig, SimulationSnapshot, SimulationStatus, SimulationConfig } from '@routex/shared/types';
+import { ScenarioConfig, SimulationSnapshot, SimulationStatus, SimulationConfig } from '@routex/shared/types';
 import { defaultScenarios } from '../scenarios/defaultScenarios';
 
 interface WorkerMessage {
-  type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setConfig';
+  type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setSpeed';
   payload?: unknown;
 }
 
 interface WorkerResponse {
-  type: 'snapshot' | 'status' | 'tickEvents' | 'error' | 'ready';
+  type: 'snapshot' | 'status' | 'ready' | 'error';
   payload: unknown;
 }
 
 export function useSimulation() {
   const workerRef = useRef<Worker | null>(null);
   const [snapshot, setSnapshot] = useState<SimulationSnapshot | null>(null);
-  const [status, setStatus] = useState<SimulationStatus>('pending');
+  const [status, setStatus] = useState<SimulationStatus>(SimulationStatus.PENDING);
   const [isWorkerReady, setIsWorkerReady] = useState(false);
-  const [scenarios] = useState(defaultScenarios);
+  const [scenarios] = useState<ScenarioConfig[]>(defaultScenarios);
   const [selectedScenarioId, setSelectedScenarioId] = useState(defaultScenarios[0]?.id || '');
-  const [pendingScenario, setPendingScenario] = useState<ScenarioConfig | null>(null);
 
   useEffect(() => {
-    const worker = new Worker(new URL('@routex/worker/simulationWorker', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('../../../worker/simulationWorker.ts', import.meta.url), { type: 'module' });
     workerRef.current = worker;
 
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
@@ -31,18 +30,20 @@ export function useSimulation() {
       switch (type) {
         case 'ready':
           setIsWorkerReady(true);
-          if (pendingScenario) {
-            worker.postMessage({ type: 'init', payload: { scenario: pendingScenario } });
-            setPendingScenario(null);
+          break;
+        case 'snapshot': {
+          const snap = payload as SimulationSnapshot;
+          setSnapshot(snap);
+          if (snap.status) {
+            setStatus(snap.status as SimulationStatus);
           }
           break;
-        case 'snapshot':
-          setSnapshot(payload as SimulationSnapshot);
-          setStatus((payload as SimulationSnapshot).status as SimulationStatus);
+        }
+        case 'status': {
+          const s = (payload as { status: SimulationStatus }).status;
+          if (s) setStatus(s);
           break;
-        case 'status':
-          setStatus((payload as { status: SimulationStatus }).status);
-          break;
+        }
         case 'error':
           console.error('Worker error:', payload);
           break;
@@ -53,18 +54,20 @@ export function useSimulation() {
       console.error('Worker error:', error);
     };
 
+    // Immediately initialize with the default scenario
+    const initialScenario = defaultScenarios.find(s => s.id === selectedScenarioId) || defaultScenarios[0];
+    if (initialScenario) {
+      worker.postMessage({ type: 'init', payload: { scenario: initialScenario } });
+    }
+
     return () => {
       worker.terminate();
     };
-  }, [pendingScenario]);
+  }, []);
 
   const initWorker = useCallback((scenario: ScenarioConfig, config?: Partial<SimulationConfig>) => {
-    if (workerRef.current && isWorkerReady) {
-      workerRef.current.postMessage({ type: 'init', payload: { scenario, config } });
-    } else {
-      setPendingScenario(scenario);
-    }
-  }, [isWorkerReady]);
+    workerRef.current?.postMessage({ type: 'init', payload: { scenario, config } });
+  }, []);
 
   const selectScenario = useCallback((scenarioId: string) => {
     const scenario = scenarios.find(s => s.id === scenarioId);

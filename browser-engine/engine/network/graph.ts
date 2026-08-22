@@ -1,5 +1,5 @@
-import { Node, Road, RoadNetwork, RoadStatus } from '../shared/types';
-import { updateRoadDynamicState } from './edge';
+import { Node, Road, RoadNetwork, RoadStatus } from '../../shared/types';
+import { updateRoadDynamicState, isTraversable } from './edge';
 
 export function createRoadNetwork(): RoadNetwork {
   return {
@@ -97,8 +97,4 @@ export function refreshDynamicState(network: RoadNetwork, vehicleCounts: Map<str
     const count = vehicleCounts.get(roadId) ?? 0;
     updateRoadDynamicState(road, count);
   }
-}
-
-export function isTraversable(road: Road): boolean {
-  return road.status === RoadStatus.OPEN;
 }
