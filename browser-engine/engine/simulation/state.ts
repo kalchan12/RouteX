@@ -1,5 +1,5 @@
 import { SimulationEngine } from './engine';
-import { Vehicle } from '../shared/types';
+import { Vehicle, Node, Road } from '../shared/types';
 
 export interface SimulationSnapshot {
   tick: number;
@@ -9,6 +9,7 @@ export interface SimulationSnapshot {
   vehicleCount: number;
   arrivedCount: number;
   networkSummary: { nodes: number; edges: number; closed: number };
+  network: { nodes: Node[]; edges: Road[] };
   metrics: {
     avgTravelTime: number;
     avgSpeed: number;
@@ -39,6 +40,10 @@ export function buildSnapshot(engine: SimulationEngine): SimulationSnapshot {
   
   const networkSummary = engine.getNetworkSummary();
   
+  const networkData = engine.getNetwork();
+  const nodes = Array.from(networkData.nodes.values());
+  const edges = Array.from(networkData.edges.values());
+
   return {
     tick: engine.getTick(),
     time: engine.getTime(),
@@ -47,6 +52,7 @@ export function buildSnapshot(engine: SimulationEngine): SimulationSnapshot {
     vehicleCount: vehicles.length,
     arrivedCount: arrived,
     networkSummary,
+    network: { nodes, edges },
     metrics: {
       avgTravelTime: arrived > 0 ? totalTravelTime / arrived : 0,
       avgSpeed: movingCount > 0 ? totalSpeed / movingCount : 0,

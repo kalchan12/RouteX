@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "pixi.js": "^8.1.0",
-    "@routex/browser-engine": "workspace:*"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

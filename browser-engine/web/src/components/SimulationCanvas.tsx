@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Application, Graphics, Container, Text as PixiText } from 'pixi.js';
-import type { SimulationSnapshot, Node, Road, Vehicle, RoadStatus } from '@routex/shared/types';
+import { Application, Graphics, Container } from 'pixi.js';
+import type { SimulationSnapshot, Node, Road, RoadStatus } from '@routex/shared/types';
 
 interface SimulationCanvasProps {
   snapshot: SimulationSnapshot | null;
@@ -20,7 +20,6 @@ const COLORS = {
   nodeHospital: 0xf472b6,
   vehicle: 0x38bdf8,
   emergency: 0xf43f5e,
-  text: 0xeaeaea,
 };
 
 function getRoadColor(road: Road): number {
@@ -45,6 +44,7 @@ export function SimulationCanvas({ snapshot }: SimulationCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const worldRef = useRef<Container | null>(null);
+  const networkDrawnRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -93,134 +93,88 @@ export function SimulationCanvas({ snapshot }: SimulationCanvasProps) {
     const world = worldRef.current;
     const app = appRef.current;
 
-    world.removeChildren();
+    const net = snapshot.network;
+    if (!net || net.nodes.length === 0) return;
 
-    const SCALE = 0.6;
-
-    const vehicles = snapshot.vehicles || [];
-    if (vehicles.length === 0) return;
-
-    const nodeMap = new Map<string, { x: number; y: number; type: string }>();
-    const visitedVehicles = new Set<string>();
+    const nodeMap = new Map<string, Node>();
+    for (const n of net.nodes) nodeMap.set(n.id, n);
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const v of vehicles) {
-      const key = v.origin;
-      if (!nodeMap.has(key)) {
-        const [x, y] = key.split('_').map(Number);
-        if (!isNaN(x) && !isNaN(y)) {
-          nodeMap.set(key, { x, y, type: 'origin' });
-          minX = Math.min(minX, x); minY = Math.min(minY, y);
-          maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
-        }
-      }
-      if (!visitedVehicles.has(v.id)) visitedVehicles.add(v.id);
-    }
-
-    if (nodeMap.size === 0) {
-      const g = new Graphics();
-      g.rect(0, 0, 20, 20).fill(COLORS.road);
-      world.addChild(g);
-      return;
-    }
-
-    const worldContainer = new Graphics();
-    world.addChild(worldContainer);
-
-    for (const v of vehicles) {
-      if (v.arrived || !v.currentEdge) continue;
-      const parts = v.currentEdge.split('_');
-      if (parts.length < 3) continue;
-
-      const nodeAKey = `n_${parts[1]}_${parts[2]}`;
-      let dirIdx = 3;
-      let nodeBKey: string;
-      if (parts[3] === 'h') {
-        nodeBKey = `n_${parts[1]}_${parts[4]}`;
-        dirIdx = 5;
-      } else {
-        nodeBKey = `n_${parts[2]}_${parts[3]}`;
-        dirIdx = 4;
-      }
-
-      for (const nk of [nodeAKey, nodeBKey]) {
-        if (!nodeMap.has(nk)) {
-          const [r, c] = nk.split('_').slice(1).map(Number);
-          if (!isNaN(r) && !isNaN(c)) {
-            nodeMap.set(nk, { x: c, y: r, type: 'intersection' });
-          }
-        }
-      }
-    }
-
-    if (nodeMap.size === 0) return;
-
-    minX = Infinity; minY = Infinity; maxX = -Infinity; maxY = -Infinity;
-    for (const n of nodeMap.values()) {
+    for (const n of net.nodes) {
       minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
       maxX = Math.max(maxX, n.x); maxY = Math.max(maxY, n.y);
     }
 
-    const offsetX = (app.screen.width / SCALE - (maxX - minX) * 80) / 2;
-    const offsetY = (app.screen.height / SCALE - (maxY - minY) * 80) / 2;
+    const worldW = (maxX - minX) || 1;
+    const worldH = (maxY - minY) || 1;
+    const scaleX = (app.screen.width * 0.85) / worldW;
+    const scaleY = (app.screen.height * 0.85) / worldH;
+    const s = Math.min(scaleX, scaleY);
 
-    for (const [id, node] of nodeMap) {
-      const px = (node.x - minX) * 80 + offsetX;
-      const py = (node.y - minY) * 80 + offsetY;
+    const offsetX = (app.screen.width - worldW * s) / 2 - minX * s;
+    const offsetY = (app.screen.height - worldH * s) / 2 - minY * s;
 
-      for (let dc = -1; dc <= 1; dc++) {
-        for (let dr = -1; dr <= 1; dr++) {
-          if (dc === 0 && dr === 0) continue;
-          const [nr, nc] = [node.y + dr, node.x + dc];
-          const neighborKey = `n_${nr}_${nc}`;
-          if (nodeMap.has(neighborKey)) {
-            const np = nodeMap.get(neighborKey)!;
-            const npx = (np.x - minX) * 80 + offsetX;
-            const npy = (np.y - minY) * 80 + offsetY;
-            worldContainer.moveTo(px, py).lineTo(npx, npy);
-          }
-        }
-      }
+    world.removeChildren();
 
-      const nodeG = new Graphics();
-      nodeG.circle(0, 0, 6).fill(getNodeColor(node.type));
-      nodeG.x = px; nodeG.y = py;
-      world.addChild(nodeG);
+    const roadG = new Graphics();
+    for (const edge of net.edges) {
+      const src = nodeMap.get(edge.source);
+      const dst = nodeMap.get(edge.destination);
+      if (!src || !dst) continue;
+
+      const x1 = src.x * s + offsetX;
+      const y1 = src.y * s + offsetY;
+      const x2 = dst.x * s + offsetX;
+      const y2 = dst.y * s + offsetY;
+
+      roadG.moveTo(x1, y1).lineTo(x2, y2);
+    }
+    roadG.stroke({ width: 3, color: COLORS.road });
+    world.addChild(roadG);
+
+    for (const edge of net.edges) {
+      if (edge.status === RoadStatus.OPEN && edge.congestion < 0.1) continue;
+      const src = nodeMap.get(edge.source);
+      const dst = nodeMap.get(edge.destination);
+      if (!src || !dst) continue;
+
+      const g = new Graphics();
+      g.moveTo(src.x * s + offsetX, src.y * s + offsetY);
+      g.lineTo(dst.x * s + offsetX, dst.y * s + offsetY);
+      g.stroke({ width: 3, color: getRoadColor(edge) });
+      world.addChild(g);
     }
 
-    worldContainer.stroke({ width: 3, color: COLORS.road });
+    for (const n of net.nodes) {
+      const g = new Graphics();
+      const r = n.type === 'origin' || n.type === 'destination' || n.type === 'hospital' ? 8 : 5;
+      g.circle(0, 0, r).fill(getNodeColor(n.type));
+      g.x = n.x * s + offsetX;
+      g.y = n.y * s + offsetY;
+      world.addChild(g);
+    }
 
-    for (const v of vehicles) {
+    for (const v of snapshot.vehicles) {
       if (v.arrived || !v.currentEdge) continue;
-      const parts = v.currentEdge.split('_');
-      let nodeAKey: string, nodeBKey: string;
+      const edge = net.edges.find(e => e.id === v.currentEdge);
+      if (!edge) continue;
 
-      if (parts.length >= 4 && parts[3] === 'h') {
-        nodeAKey = `n_${parts[1]}_${parts[2]}`;
-        nodeBKey = `n_${parts[1]}_${parts[4]}`;
-      } else if (parts.length >= 4) {
-        nodeAKey = `n_${parts[1]}_${parts[2]}`;
-        nodeBKey = `n_${parts[2]}_${parts[3]}`;
-      } else {
-        continue;
-      }
+      const src = nodeMap.get(edge.source);
+      const dst = nodeMap.get(edge.destination);
+      if (!src || !dst) continue;
 
-      const na = nodeMap.get(nodeAKey);
-      const nb = nodeMap.get(nodeBKey);
-      if (!na || !nb) continue;
-
-      const px = ((na.x - minX) * 80 + offsetX) + v.progress * ((nb.x - na.x) * 80);
-      const py = ((na.y - minY) * 80 + offsetY) + v.progress * ((nb.y - na.y) * 80);
+      const px = (src.x + v.progress * (dst.x - src.x)) * s + offsetX;
+      const py = (src.y + v.progress * (dst.y - src.y)) * s + offsetY;
 
       const vg = new Graphics();
       const color = v.type === 'emergency' ? COLORS.emergency : COLORS.vehicle;
-      vg.circle(0, 0, v.type === 'emergency' ? 5 : 4).fill(color);
-      vg.x = px; vg.y = py;
+      vg.circle(0, 0, v.type === 'emergency' ? 6 : 4).fill(color);
+      vg.x = px;
+      vg.y = py;
       world.addChild(vg);
     }
 
-    world.x = (app.screen.width - world.width) / 2;
-    world.y = (app.screen.height - world.height) / 2;
+    networkDrawnRef.current = true;
   }, [snapshot]);
 
   return (

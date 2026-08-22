@@ -186,6 +186,9 @@ function getSnapshot(): SimulationSnapshot {
   }
   for (const e of network.edges.values()) { totalCongestion += e.congestion; edgeCount++; }
 
+  const nodes = Array.from(network.nodes.values());
+  const edges = Array.from(network.edges.values());
+
   return {
     tick,
     time: tick,
@@ -194,6 +197,7 @@ function getSnapshot(): SimulationSnapshot {
     vehicleCount: vehicles.length,
     arrivedCount: arrived,
     networkSummary: { nodes: network.nodes.size, edges: network.edges.size, closed: 0 },
+    network: { nodes, edges },
     metrics: {
       avgTravelTime: arrived > 0 ? totalTravelTime / arrived : 0,
       avgSpeed: moving > 0 ? totalSpeed / moving : 0,
