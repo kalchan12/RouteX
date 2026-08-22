@@ -162,7 +162,7 @@ routex/
 ## Requirements
 
 - Node.js 20+
-- pnpm (recommended) or npm
+- npm
 
 ---
 
@@ -170,7 +170,7 @@ routex/
 
 ```bash
 # 1. Install dependencies
-pnpm install
+npm install
 
 # 2. (Optional) Create environment file
 cp .env.example .env
@@ -182,13 +182,13 @@ cp .env.example .env
 
 ```bash
 # Development server with hot reload
-pnpm dev
+npm run dev
 
 # Production build
-pnpm build
+npm run build
 
 # Preview production build
-pnpm preview
+npm run preview
 ```
 
 Open http://localhost:5173 — select a scenario and start the simulation.
@@ -199,13 +199,13 @@ Open http://localhost:5173 — select a scenario and start the simulation.
 
 ```bash
 # Unit tests (Vitest)
-pnpm test
+npm test
 
 # Unit tests in watch mode
-pnpm test:watch
+npm run test:watch
 
 # E2E tests (Playwright)
-pnpm test:e2e
+npm run test:e2e
 ```
 
 ---
