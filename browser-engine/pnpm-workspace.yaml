@@ -1,0 +1,6 @@
+packages:
+  - 'shared'
+  - 'engine'
+  - 'worker'
+  - 'web'
+  - 'api'

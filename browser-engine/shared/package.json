@@ -1,0 +1,14 @@
+{
+  "name": "@routex/shared",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/types.js",
+  "types": "dist/types.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
