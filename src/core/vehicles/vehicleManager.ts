@@ -1,5 +1,5 @@
 import { Vehicle, VehicleType, Route, RoadNetwork, Road, Node } from '../../types';
-import { createRoadNetwork, outgoingEdges, getRoad, isTraversable, neighbors } from '../network';
+import { getRoad, isTraversable } from '../network';
 
 export interface VehicleManagerConfig {
   network: RoadNetwork;

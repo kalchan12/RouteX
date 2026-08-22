@@ -1,8 +1,8 @@
-import { useSimulation } from '../hooks/useSimulation';
-import { SimulationCanvas } from '../components/simulation/SimulationCanvas';
-import { ControlPanel } from '../components/simulation/ControlPanel';
-import { MetricsPanel } from '../components/analytics/MetricsPanel';
-import { ScenarioSelector } from '../components/scenarios/ScenarioSelector';
+import { useSimulation } from './hooks/useSimulation';
+import { SimulationCanvas } from './components/simulation/SimulationCanvas';
+import { ControlPanel } from './components/simulation/ControlPanel';
+import { MetricsPanel } from './components/analytics/MetricsPanel';
+import { ScenarioSelector } from './components/scenarios/ScenarioSelector';
 import './App.css';
 
 export function App() {

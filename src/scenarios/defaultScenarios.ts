@@ -1,4 +1,4 @@
-import { ScenarioConfig, ScenarioNetwork, VehicleType, NodeType, RoadType, RoadStatus, ScenarioTrafficLight } from '../../types';
+import { ScenarioConfig, ScenarioNetwork, VehicleType, NodeType, RoadType, RoadStatus, ScenarioTrafficLight } from '../types';
 
 function buildGridNetwork(cols: number, rows: number, blockSize: number): ScenarioNetwork {
   const nodes: ScenarioNetwork['nodes'] = [];

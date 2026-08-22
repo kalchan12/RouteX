@@ -61,8 +61,8 @@ export class MetricsTracker {
         summary[key] = 0;
         continue;
       }
-      const values = series.map(p => p.value);
-      const sum = values.reduce((a, b) => a + b, 0);
+      const values = series.map((p: { value: number }) => p.value);
+      const sum = values.reduce((a: number, b: number) => a + b, 0);
       summary[`${key}_avg`] = sum / values.length;
       summary[`${key}_max`] = Math.max(...values);
       summary[`${key}_min`] = Math.min(...values);

@@ -1,5 +1,5 @@
 import { Road } from '../../types';
-import { congestionFactor, calculateCongestion } from './congestion';
+import { calculateCongestion } from './congestion';
 import { updateRoadDynamicState } from '../network/edge';
 
 export function refreshNetworkDynamicState(
@@ -12,4 +12,4 @@ export function refreshNetworkDynamicState(
   }
 }
 
-export { congestionFactor, calculateCongestion };
+export { calculateCongestion };
