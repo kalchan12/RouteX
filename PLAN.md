@@ -12,13 +12,13 @@
 
 **Project:** RouteX
 
-**Current Phase:** Architecture Cleanup / Foundation
+**Current Phase:** Phase 1 — Foundation / Rendering Integration
 
 **Overall Status:** IN PROGRESS
 
-**Last Updated:** YYYY-MM-DD
+**Last Updated:** 2026-08-23
 
-**Current Priority:** Establish a clean browser-first architecture before expanding simulation functionality.
+**Current Priority:** PixiJS rendering layer integration and realistic 2D traffic simulation foundation.
 
 ---
 
@@ -87,7 +87,7 @@ P3 = Optional / future
 
 ## Phase 0 — Architecture Cleanup
 
-**Status:** IN_PROGRESS
+**Status:** COMPLETE
 
 Goal:
 
@@ -95,60 +95,60 @@ Remove obsolete architecture and establish one coherent browser-first RouteX cod
 
 Tasks:
 
-- [ ] P0 — Audit existing repository
-- [ ] P0 — Identify duplicate simulation implementations
-- [ ] P0 — Identify obsolete backend architecture
-- [ ] P0 — Identify obsolete Next.js architecture
-- [ ] P0 — Establish canonical TypeScript simulation engine
-- [ ] P0 — Consolidate source structure
-- [ ] P0 — Remove obsolete backend code
-- [ ] P0 — Remove obsolete Next.js code
-- [ ] P0 — Remove generated artifacts
-- [ ] P1 — Update package dependencies
-- [ ] P1 — Update tests
-- [ ] P1 — Update documentation
-- [ ] P0 — Verify build
-- [ ] P0 — Verify tests
+- [x] P0 — Audit existing repository
+- [x] P0 — Identify duplicate simulation implementations
+- [x] P0 — Identify obsolete backend architecture
+- [x] P0 — Identify obsolete Next.js architecture
+- [x] P0 — Establish canonical TypeScript simulation engine
+- [x] P0 — Consolidate source structure
+- [x] P0 — Remove obsolete backend code
+- [x] P0 — Remove obsolete Next.js code
+- [x] P0 — Remove generated artifacts
+- [x] P1 — Update package dependencies
+- [x] P1 — Update tests
+- [x] P1 — Update documentation
+- [x] P0 — Verify build
+- [x] P0 — Verify tests
 
 Exit Criteria:
 
 ```text
-[ ] One frontend
-[ ] One simulation engine
-[ ] No obsolete backend dependency
-[ ] No duplicate core implementation
-[ ] Build passes
-[ ] Tests pass
-[ ] Documentation reflects actual architecture
+[x] One frontend
+[x] One simulation engine
+[x] No obsolete backend dependency
+[x] No duplicate core implementation
+[x] Build passes
+[x] Tests pass
+[x] Documentation reflects actual architecture
 ```
 
 ---
 
 # 6. Phase 1 — Foundation
 
-**Status:** NOT_STARTED
+**Status:** IN_PROGRESS
 
 Tasks:
 
-- [ ] P0 — Finalize Vite application structure
-- [ ] P0 — Finalize TypeScript configuration
-- [ ] P0 — Establish core module boundaries
+- [x] P0 — Finalize Vite application structure
+- [x] P0 — Finalize TypeScript configuration
+- [x] P0 — Establish core module boundaries
 - [ ] P1 — Establish Zustand stores
 - [ ] P1 — Establish Dexie database
 - [ ] P1 — Establish scenario validation
 - [ ] P1 — Establish reusable UI components
-- [ ] P1 — Establish PixiJS rendering boundary
-- [ ] P1 — Establish test infrastructure
+- [x] P1 — Establish PixiJS rendering boundary
+- [x] P1 — Establish test infrastructure
 
 Exit Criteria:
 
 ```text
-[ ] Application runs
-[ ] Core modules are isolated
-[ ] UI and simulation are separated
+[x] Application runs
+[x] Core modules are isolated
+[x] UI and simulation are separated
 [ ] IndexedDB is functional
-[ ] PixiJS renders successfully
-[ ] Tests execute
+[x] PixiJS renders successfully
+[x] Tests execute
 ```
 
 ---
@@ -355,22 +355,26 @@ The AI MUST keep this section updated.
 
 ```text
 Current Task:
-<task>
+Transition from graph visualization to realistic 2D traffic simulation architecture
 
 Status:
-<status>
+IN_PROGRESS
 
 Started:
-<date>
+2026-08-23
 
 Owner:
-AI / Human / Team
+AI
 
 Blocked By:
-<none or task>
+None
 
 Expected Result:
-<result>
+- Clean architecture with src/core, src/rendering/pixi, src/components separation
+- PixiJS rendering layer with road, node, vehicle, traffic light renderers
+- Extended types for VehicleState, Incident, Pedestrian
+- Build passes, tests pass
+- Documentation updated
 ```
 
 ---
@@ -381,13 +385,13 @@ The AI MUST identify the next recommended task.
 
 ```text
 Next Task:
-<task>
+Implement vehicle movement with lane following and traffic light compliance
 
 Priority:
-<P0/P1/P2/P3>
+P0
 
 Reason:
-<why this should happen next>
+The rendering foundation is in place. Next step is to enhance the simulation engine with realistic vehicle behaviors (lane following, acceleration/braking, traffic light stopping, collision avoidance) and connect them to the PixiJS renderer for visual validation.
 ```
 
 ---
@@ -396,12 +400,14 @@ Reason:
 
 Keep a short history of meaningful completed work.
 
-Example:
-
 ```text
-- [YYYY-MM-DD] Consolidated TypeScript simulation engine.
-- [YYYY-MM-DD] Removed obsolete FastAPI architecture.
-- [YYYY-MM-DD] Migrated simulation renderer to PixiJS.
+- [2026-08-23] Consolidated TypeScript simulation engine into src/core/
+- [2026-08-23] Removed obsolete FastAPI backend (apps/api/), Python engine (engine/), Next.js frontend (apps/web/), Docker infrastructure
+- [2026-08-23] Established single npm-based package.json with React, Vite, PixiJS
+- [2026-08-23] Created PixiJS rendering layer (src/rendering/pixi/) with road, node, vehicle, traffic light renderers
+- [2026-08-23] Extended types: VehicleState, VehicleType (BUS, TRUCK), Incident, Pedestrian, new EventTypes
+- [2026-08-23] Updated ARCHITECTURE.md, PROJECT.md, PLAN.md to reflect new architecture
+- [2026-08-23] Build passes, tests pass (5 unit tests)
 ```
 
 Do not delete historical entries unless this section becomes excessively large.
@@ -482,29 +488,29 @@ Documentation Updated:
 Tests Updated:
 ```
 
-Example:
-
 ```text
 Date:
-YYYY-MM-DD
+2026-08-23
 
 Change:
-Moved simulation execution into a Web Worker.
+Transitioned from graph-based visualization to realistic 2D traffic simulation architecture. Consolidated multiple architectures (FastAPI backend, Next.js frontend, Python engine, browser-engine) into single browser-first TypeScript codebase. Added PixiJS rendering layer with dedicated renderers.
 
 Reason:
-Reduce UI thread contention during large simulations.
+Original architecture had duplicate implementations (Python + TypeScript simulation engines, Next.js + Vite frontends). The new direction requires realistic 2D top-down traffic visualization with continuous vehicle movement, lanes, traffic lights, incidents, and pedestrians — which requires a clean rendering separation.
 
 Affected Components:
-Simulation
-Rendering
-State
-Worker
+- Removed: apps/api/, apps/web/, engine/, browser-engine/, docker/, shared/, scripts/
+- Added: src/rendering/pixi/ (roadRenderer, nodeRenderer, vehicleRenderer, trafficLightRenderer, simulationRenderer)
+- Extended: src/types/ (VehicleState, VehicleType, Incident, Pedestrian, EventType)
+- Updated: src/core/vehicles/vehicleManager.ts (new Vehicle fields)
+- Updated: src/scenarios/defaultScenarios.ts (incidents, pedestrians)
+- Package manager: pnpm → npm
 
 Documentation Updated:
-ARCHITECTURE.md
+ARCHITECTURE.md, PROJECT.md, PLAN.md, README.md
 
 Tests Updated:
-Simulation worker tests
+Unit tests pass (5 tests)
 ```
 
 ---

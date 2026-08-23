@@ -36,7 +36,7 @@ There is no required traditional backend.
 | Unit Testing | Vitest |
 | Component Testing | React Testing Library |
 | E2E Testing | Playwright |
-| Package Manager | pnpm |
+| Package Manager | npm |
 
 ---
 
@@ -113,8 +113,24 @@ PixiJS is responsible for visualizing:
 - Routes
 - Incidents
 - Congestion
+- Pedestrians
 
 Rendering code must not implement business logic.
+
+The rendering layer is organized as:
+
+```text
+src/rendering/
+└── pixi/
+    ├── simulationRenderer.ts  # Main orchestrator
+    ├── roadRenderer.ts        # Road network visualization
+    ├── nodeRenderer.ts        # Intersection/node visualization
+    ├── vehicleRenderer.ts     # Vehicle rendering with interpolation
+    ├── trafficLightRenderer.ts # Traffic light state visualization
+    └── types.ts               # Shared rendering types
+```
+
+Each renderer is a focused class that consumes simulation state and produces visual output. The SimulationRenderer orchestrates all sub-renderers and handles viewport/camera interactions (zoom, pan).
 
 ---
 
@@ -235,6 +251,19 @@ core/vehicles/
 ├── vehicle-manager.ts
 └── movement.ts
 ```
+
+---
+
+## Incidents
+
+```text
+core/incidents/
+├── incident.ts
+├── incident-manager.ts
+└── incident-types.ts
+```
+
+Responsible for managing road incidents (accidents, construction, closures, debris, weather) and their effects on traffic flow.
 
 ---
 
@@ -385,6 +414,7 @@ tests/
 ├── simulation/
 ├── traffic/
 ├── vehicles/
+├── incidents/
 ├── optimization/
 └── integration/
 ```

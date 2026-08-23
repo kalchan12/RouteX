@@ -74,11 +74,11 @@ Where:
 - V = intersections
 - E = roads
 
-Vehicles move through this graph.
+The graph is the underlying mathematical model for routing and network topology.
 
-The simulation continuously models:
+Vehicles move through this graph. The simulation continuously models:
 
-- Vehicle movement
+- Vehicle movement (position, speed, acceleration, lane position)
 - Road occupancy
 - Traffic density
 - Congestion
@@ -87,8 +87,11 @@ The simulation continuously models:
 - Traffic lights
 - Road incidents
 - Route changes
+- Pedestrian movement
 
 Algorithms can then operate on this environment.
+
+The visual representation is a realistic 2D top-down traffic simulation rendered with PixiJS, where the graph edges become roads with lanes, and vehicles move continuously along them rather than jumping between nodes.
 
 ---
 
@@ -121,20 +124,34 @@ Vehicles may have:
 
 - Origin
 - Destination
-- Current location
+- Current location (continuous position on road)
 - Current road
+- Current lane
 - Speed
 - Maximum speed
+- Acceleration
+- Deceleration
 - Route
 - Vehicle type
-- Status
+- State (MOVING, SLOWING, STOPPED, WAITING, TURNING, ARRIVED)
 
 Vehicle types may include:
 
-- NORMAL
+- NORMAL (cars)
 - BUS
 - TRUCK
 - EMERGENCY
+
+Initial realistic behaviors:
+
+- Following roads and lanes
+- Moving continuously (not node-to-node)
+- Accelerating and braking
+- Stopping at red traffic lights
+- Waiting behind other vehicles
+- Turning at intersections
+- Responding to congestion
+- Rerouting when roads become unavailable
 
 ---
 
@@ -142,18 +159,23 @@ Vehicle types may include:
 
 The simulation uses a discrete-time model.
 
-Each simulation tick may perform:
+The simulation engine runs independently from the renderer. The architecture separates:
+
+- **Simulation Core** (`src/core/`) — Pure TypeScript logic for clock, vehicles, traffic, routing, events, metrics
+- **PixiJS Renderer** (`src/rendering/pixi/`) — Visual representation consuming simulation state
+
+Each simulation tick performs:
 
 1. Advance simulation clock
 2. Update traffic lights
-3. Update vehicle movement
+3. Update vehicle movement (position, speed, lane)
 4. Update road occupancy
 5. Calculate congestion
 6. Calculate travel time
-7. Process events
-8. Recalculate routes
+7. Process events (incidents, spawns, etc.)
+8. Recalculate routes (dynamic routing)
 9. Collect metrics
-10. Update visualization
+10. Emit snapshot for renderer
 
 ---
 
