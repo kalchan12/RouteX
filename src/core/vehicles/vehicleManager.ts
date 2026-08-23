@@ -1,4 +1,4 @@
-import { Vehicle, VehicleType, Route, RoadNetwork, Road, Node } from '../../types';
+import { Vehicle, VehicleType, VehicleState, Route, RoadNetwork, Road, Node } from '../../types';
 import { getRoad, isTraversable } from '../network';
 
 export interface VehicleManagerConfig {
@@ -97,15 +97,21 @@ export class VehicleManager {
     const firstEdge = getRoad(this.network, route.edges[0]);
     const speedLimit = firstEdge.speedLimit;
     
+    const maxSpeed = type === VehicleType.EMERGENCY ? speedLimit * 1.3 : speedLimit;
+    
     return {
       id: `veh_${this.nextVehicleId++}`,
       type,
+      state: VehicleState.MOVING,
       origin,
       destination,
       currentEdge: route.edges[0],
       progress: 0,
       route,
       speed: speedLimit,
+      maxSpeed,
+      acceleration: maxSpeed * 0.1,
+      deceleration: maxSpeed * 0.2,
       spawnTick: this.tick,
       arrived: false,
       arrivalTick: null,
@@ -176,7 +182,6 @@ export class VehicleManager {
 
   private aStar(origin: string, destination: string): Route | null {
     const start = performance.now();
-    const destNode = this.network.nodes.get(destination)!;
     
     const gScore = new Map<string, number>([[origin, 0]]);
     const fScore = new Map<string, number>([[origin, heuristic(origin, destination, this.network)]]);

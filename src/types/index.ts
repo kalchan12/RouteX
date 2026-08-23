@@ -63,17 +63,32 @@ export type CostFunction = (road: Road) => number;
 export enum VehicleType {
   NORMAL = 'normal',
   EMERGENCY = 'emergency',
+  BUS = 'bus',
+  TRUCK = 'truck',
+}
+
+export enum VehicleState {
+  MOVING = 'moving',
+  SLOWING = 'slowing',
+  STOPPED = 'stopped',
+  WAITING = 'waiting',
+  TURNING = 'turning',
+  ARRIVED = 'arrived',
 }
 
 export interface Vehicle {
   id: string;
   type: VehicleType;
+  state: VehicleState;
   origin: string;
   destination: string;
   currentEdge: string | null;
   progress: number;
   route: Route | null;
   speed: number;
+  maxSpeed: number;
+  acceleration: number;
+  deceleration: number;
   spawnTick: number;
   arrived: boolean;
   arrivalTick: number | null;
@@ -87,6 +102,9 @@ export enum EventType {
   TRAFFIC_SPIKE = 'traffic_spike',
   EMERGENCY_VEHICLE = 'emergency_vehicle',
   TRAFFIC_LIGHT_CHANGE = 'traffic_light_change',
+  INCIDENT_CREATED = 'incident_created',
+  INCIDENT_CLEARED = 'incident_cleared',
+  PEDESTRIAN_SPAWN = 'pedestrian_spawn',
 }
 
 export interface SimulationEvent {
@@ -97,6 +115,44 @@ export interface SimulationEvent {
   roadId: string | null;
   nodeId: string | null;
   payload: Record<string, unknown>;
+}
+
+export enum IncidentType {
+  ACCIDENT = 'accident',
+  CONSTRUCTION = 'construction',
+  ROAD_CLOSURE = 'road_closure',
+  DEBRIS = 'debris',
+  WEATHER = 'weather',
+}
+
+export enum IncidentSeverity {
+  MINOR = 'minor',
+  MODERATE = 'moderate',
+  SEVERE = 'severe',
+  CRITICAL = 'critical',
+}
+
+export interface Incident {
+  id: string;
+  type: IncidentType;
+  severity: IncidentSeverity;
+  roadId: string | null;
+  nodeId: string | null;
+  position: { x: number; y: number } | null;
+  description: string;
+  startTick: number;
+  endTick: number | null;
+  affectedLanes: number[];
+  estimatedClearanceTick: number | null;
+}
+
+export interface Pedestrian {
+  id: string;
+  position: { x: number; y: number };
+  targetPosition: { x: number; y: number };
+  speed: number;
+  state: 'walking' | 'waiting' | 'crossing';
+  spawnTick: number;
 }
 
 export enum SimulationStatus {
@@ -115,6 +171,8 @@ export interface SimulationSnapshot {
   vehicles: Vehicle[];
   vehicleCount: number;
   arrivedCount: number;
+  incidents: Incident[];
+  pedestrians: Pedestrian[];
   networkSummary: { nodes: number; edges: number; closed: number };
   network: { nodes: Node[]; edges: Road[] };
   metrics: {
@@ -154,6 +212,8 @@ export interface ScenarioConfig {
   network: ScenarioNetwork;
   trafficLights: ScenarioTrafficLight[];
   events: Omit<SimulationEvent, 'id'>[];
+  incidents: Omit<Incident, 'id' | 'startTick' | 'endTick'>[];
+  pedestrians: Omit<Pedestrian, 'id' | 'spawnTick'>[];
   vehicleSpawnRate: number;
   vehicleTypes: VehicleType[];
 }
