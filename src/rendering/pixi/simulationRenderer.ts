@@ -198,10 +198,15 @@ export class SimulationRenderer {
       this.trafficLightRenderer.renderTrafficLights(lights);
     }
 
-    this.fitToScreen();
+    if (!this.hasFit) {
+      this.fitToScreen();
+      this.hasFit = true;
+    }
   }
 
-  private fitToScreen(): void {
+  private hasFit = false;
+
+  public fitToScreen(): void {
     if (!this.app || !this.worldContainer || !this.snapshot) return;
 
     const net = this.snapshot.network;
@@ -215,13 +220,13 @@ export class SimulationRenderer {
 
     const worldW = (maxX - minX) || 1;
     const worldH = (maxY - minY) || 1;
-    const screenW = this.app.screen.width;
-    const screenH = this.app.screen.height;
+    const screenW = this.app.screen.width || this.container?.clientWidth || 800;
+    const screenH = this.app.screen.height || this.container?.clientHeight || 600;
 
     const padding = 60;
     const scaleX = (screenW - padding * 2) / worldW;
     const scaleY = (screenH - padding * 2) / worldH;
-    const scale = Math.min(scaleX, scaleY) * 0.95;
+    const scale = Math.min(scaleX, scaleY) * 0.95 || 0.2;
 
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
