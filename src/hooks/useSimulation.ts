@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { ScenarioConfig, SimulationSnapshot, SimulationStatus, SimulationConfig } from '../types';
 import { defaultScenarios } from '../scenarios/defaultScenarios';
+import { useSimulationStore } from '../stores';
 
 interface WorkerMessage {
   type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setSpeed';
@@ -14,11 +15,26 @@ interface WorkerResponse {
 
 export function useSimulation() {
   const workerRef = useRef<Worker | null>(null);
-  const [snapshot, setSnapshot] = useState<SimulationSnapshot | null>(null);
-  const [status, setStatus] = useState<SimulationStatus>(SimulationStatus.PENDING);
-  const [isWorkerReady, setIsWorkerReady] = useState(false);
-  const [scenarios] = useState<ScenarioConfig[]>(defaultScenarios);
-  const [selectedScenarioId, setSelectedScenarioId] = useState(defaultScenarios[0]?.id || '');
+
+  const {
+    status,
+    snapshot,
+    selectedScenarioId,
+    scenarios,
+    isWorkerReady,
+    setStatus,
+    setSnapshot,
+    setSelectedScenarioId,
+    setScenarios,
+    setIsWorkerReady,
+  } = useSimulationStore();
+
+  useEffect(() => {
+    setScenarios(defaultScenarios);
+    if (!selectedScenarioId && defaultScenarios[0]) {
+      setSelectedScenarioId(defaultScenarios[0].id);
+    }
+  }, [setScenarios, setSelectedScenarioId, selectedScenarioId]);
 
   useEffect(() => {
     const worker = new Worker(new URL('../workers/simulation.worker.ts', import.meta.url), { type: 'module' });
@@ -54,7 +70,6 @@ export function useSimulation() {
       console.error('Worker error:', error);
     };
 
-    // Immediately initialize with the default scenario
     const initialScenario = defaultScenarios.find(s => s.id === selectedScenarioId) || defaultScenarios[0];
     if (initialScenario) {
       worker.postMessage({ type: 'init', payload: { scenario: initialScenario } });
@@ -75,7 +90,7 @@ export function useSimulation() {
       setSelectedScenarioId(scenarioId);
       initWorker(scenario);
     }
-  }, [scenarios, initWorker]);
+  }, [scenarios, setSelectedScenarioId, initWorker]);
 
   const sendCommand = useCallback((type: WorkerMessage['type'], payload?: unknown) => {
     workerRef.current?.postMessage({ type, payload });
@@ -92,13 +107,6 @@ export function useSimulation() {
   }, [sendCommand, selectedScenarioId, scenarios, initWorker]);
   const step = useCallback(() => sendCommand('step'), [sendCommand]);
   const run = useCallback((steps = 100) => sendCommand('run', { steps }), [sendCommand]);
-
-  useEffect(() => {
-    if (isWorkerReady && selectedScenarioId) {
-      const scenario = scenarios.find(s => s.id === selectedScenarioId);
-      if (scenario) initWorker(scenario);
-    }
-  }, [isWorkerReady, selectedScenarioId, scenarios, initWorker]);
 
   return {
     snapshot,
