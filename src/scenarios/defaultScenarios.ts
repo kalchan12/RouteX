@@ -1,4 +1,4 @@
-import { ScenarioConfig, ScenarioNetwork, VehicleType, NodeType, RoadType, RoadStatus, ScenarioTrafficLight } from '../types';
+import { ScenarioConfig, ScenarioNetwork, VehicleType, NodeType, RoadType, RoadStatus, ScenarioTrafficLight, Incident, Pedestrian } from '../types';
 
 function buildGridNetwork(cols: number, rows: number, blockSize: number): ScenarioNetwork {
   const nodes: ScenarioNetwork['nodes'] = [];
@@ -94,6 +94,8 @@ const normal = (): ScenarioConfig => {
     network: buildGridNetwork(cols, rows, block),
     trafficLights: buildTrafficLights(cols, rows, 15, 15),
     events: [],
+    incidents: [] as Omit<Incident, 'id' | 'startTick' | 'endTick'>[],
+    pedestrians: [] as Omit<Pedestrian, 'id' | 'spawnTick'>[],
     vehicleSpawnRate: 2,
     vehicleTypes: [VehicleType.NORMAL],
   };
@@ -108,6 +110,8 @@ const rushHour = (): ScenarioConfig => {
     network: buildGridNetwork(cols, rows, block),
     trafficLights: buildTrafficLights(cols, rows, 12, 20),
     events: [],
+    incidents: [] as Omit<Incident, 'id' | 'startTick' | 'endTick'>[],
+    pedestrians: [] as Omit<Pedestrian, 'id' | 'spawnTick'>[],
     vehicleSpawnRate: 5,
     vehicleTypes: [VehicleType.NORMAL],
   };
@@ -132,6 +136,17 @@ const accident = (): ScenarioConfig => {
         payload: {},
       },
     ],
+    incidents: [{
+      type: 'accident' as any,
+      severity: 'moderate' as any,
+      roadId: 'e_7',
+      nodeId: null,
+      position: null,
+      description: 'Vehicle collision blocking lane',
+      affectedLanes: [0],
+      estimatedClearanceTick: 300,
+    }] as Omit<Incident, 'id' | 'startTick' | 'endTick'>[],
+    pedestrians: [] as Omit<Pedestrian, 'id' | 'spawnTick'>[],
     vehicleSpawnRate: 3,
     vehicleTypes: [VehicleType.NORMAL],
   };
@@ -164,6 +179,8 @@ const emergency = (): ScenarioConfig => {
         payload: {},
       },
     ],
+    incidents: [] as Omit<Incident, 'id' | 'startTick' | 'endTick'>[],
+    pedestrians: [] as Omit<Pedestrian, 'id' | 'spawnTick'>[],
     vehicleSpawnRate: 2,
     vehicleTypes: [VehicleType.NORMAL, VehicleType.EMERGENCY],
   };
@@ -188,6 +205,17 @@ const roadClosure = (): ScenarioConfig => {
         payload: {},
       },
     ],
+    incidents: [{
+      type: 'road_closure' as any,
+      severity: 'severe' as any,
+      roadId: 'e_5',
+      nodeId: null,
+      position: null,
+      description: 'Road closed for maintenance',
+      affectedLanes: [0, 1],
+      estimatedClearanceTick: 400,
+    }] as Omit<Incident, 'id' | 'startTick' | 'endTick'>[],
+    pedestrians: [] as Omit<Pedestrian, 'id' | 'spawnTick'>[],
     vehicleSpawnRate: 3,
     vehicleTypes: [VehicleType.NORMAL],
   };
