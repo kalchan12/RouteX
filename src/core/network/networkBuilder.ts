@@ -1,4 +1,4 @@
-import { ScenarioNetwork, RoadNetwork, Node, Road, RoadType, RoadStatus, NodeType } from '../../types';
+import { ScenarioNetwork } from '../../types';
 import { createNode } from './node';
 import { createRoad } from './edge';
 import { createRoadNetwork, addNode, addRoad } from './graph';

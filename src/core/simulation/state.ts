@@ -1,5 +1,5 @@
 import { SimulationEngine } from './engine';
-import { SimulationSnapshot, Vehicle, Node, Road } from '../../types';
+import { SimulationSnapshot, Incident, Pedestrian } from '../../types';
 export type { SimulationSnapshot };
 
 export function buildSnapshot(engine: SimulationEngine): SimulationSnapshot {
@@ -26,6 +26,10 @@ export function buildSnapshot(engine: SimulationEngine): SimulationSnapshot {
   const nodes = Array.from(networkData.nodes.values());
   const edges = Array.from(networkData.edges.values());
 
+  // Incidents and pedestrians would be retrieved from the engine if implemented
+  const incidents: Incident[] = [];
+  const pedestrians: Pedestrian[] = [];
+
   return {
     tick: engine.getTick(),
     time: engine.getTime(),
@@ -33,6 +37,8 @@ export function buildSnapshot(engine: SimulationEngine): SimulationSnapshot {
     vehicles,
     vehicleCount: vehicles.length,
     arrivedCount: arrived,
+    incidents,
+    pedestrians,
     networkSummary,
     network: { nodes, edges },
     metrics: {

@@ -1,4 +1,4 @@
-import { RoadNetwork, Node, Road, RoadStatus } from '../../types';
+import { RoadNetwork, Node, Road } from '../../types';
 import { updateRoadDynamicState, isTraversable } from './edge';
 
 export function createRoadNetwork(): RoadNetwork {

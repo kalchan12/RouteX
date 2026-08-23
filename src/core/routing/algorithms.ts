@@ -86,7 +86,6 @@ export function createAStar(): RoutingAlgorithm {
       }
 
       const start = performance.now();
-      const destNode = network.nodes.get(destination)!;
       
       const gScore = new Map<string, number>([[origin, 0]]);
       const fScore = new Map<string, number>([[origin, heuristic(origin, destination, network)]]);

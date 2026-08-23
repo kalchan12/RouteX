@@ -1,9 +1,6 @@
 import { 
   ScenarioConfig, 
-  ScenarioNetwork, 
-  ScenarioTrafficLight, 
   RoadNetwork, 
-  Road, 
   Vehicle, 
   VehicleType, 
   SimulationEvent, 
@@ -17,9 +14,8 @@ import { EventQueue, createEvent } from './events';
 import { buildNetwork } from '../network/networkBuilder';
 import { VehicleManager, createVehicleManager } from '../vehicles/vehicleManager';
 import { refreshNetworkDynamicState } from '../traffic/trafficModel';
-import { buildLights, stepLights, isGreen, getLightForNode } from '../traffic/trafficLights';
+import { buildLights, stepLights, getLightForNode } from '../traffic/trafficLights';
 import { buildSnapshot, SimulationSnapshot } from './state';
-import { createDijkstra, createAStar, defaultCost } from '../routing/algorithms';
 
 export interface SimulationEngineConfig {
   scenario: ScenarioConfig;
@@ -44,9 +40,6 @@ export class SimulationEngine {
   
   private spikeTicksLeft = 0;
   private spikeRate = 0;
-  
-  private dijkstra = createDijkstra();
-  private astar = createAStar();
 
   constructor(config: SimulationEngineConfig) {
     this.scenario = config.scenario;

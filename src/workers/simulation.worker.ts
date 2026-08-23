@@ -1,14 +1,9 @@
 import { SimulationEngine } from '../core/simulation/engine';
-import { SimulationSnapshot, SimulationStatus, ScenarioConfig, SimulationConfig } from '../types';
+import { SimulationStatus, ScenarioConfig, SimulationConfig } from '../types';
 
 interface EngineMessage {
   type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setSpeed';
   payload?: any;
-}
-
-interface EngineResponse {
-  type: 'snapshot' | 'status' | 'ready' | 'error';
-  payload: any;
 }
 
 let engine: SimulationEngine | null = null;
