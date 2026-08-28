@@ -1,1 +1,1 @@
-export * from './vehicleManager';
+export * from './vehicleManager';export * from './movement';

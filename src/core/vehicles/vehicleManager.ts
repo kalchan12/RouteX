@@ -1,5 +1,8 @@
 import { Vehicle, VehicleType, VehicleState, Route, RoadNetwork, Road, Node } from '../../types';
 import { getRoad, isTraversable } from '../network';
+import { updateVehicleKinematics } from './movement';
+import { TrafficLight } from '../traffic/trafficLights';
+import { createDijkstra, createAStar } from '../routing/algorithms';
 
 export interface VehicleManagerConfig {
   network: RoadNetwork;
@@ -38,10 +41,10 @@ export class VehicleManager {
     this.spawnRate = rate;
   }
 
-  step(tick: number): void {
+  step(tick: number, lights: Map<string, TrafficLight> = new Map()): void {
     this.tick = tick;
     this.spawnVehicles();
-    this.moveVehicles();
+    this.moveVehicles(lights);
   }
 
   private spawnVehicles(): void {
@@ -120,152 +123,18 @@ export class VehicleManager {
 
   private findRoute(origin: string, destination: string): Route | null {
     if (this.algorithm === 'astar') {
-      return this.aStar(origin, destination);
+      return createAStar().findRoute(this.network, origin, destination);
     }
-    return this.dijkstra(origin, destination);
+    return createDijkstra().findRoute(this.network, origin, destination);
   }
 
-  private dijkstra(origin: string, destination: string): Route | null {
-    const start = performance.now();
-    const dist = new Map<string, number>([[origin, 0]]);
-    const prev = new Map<string, { node: string; edge: string }>();
-    const heap: Array<[number, string]> = [[0, origin]];
-    const visited = new Set<string>();
-
-    while (heap.length > 0) {
-      heap.sort((a, b) => a[0] - b[0]);
-      const [currentDist, nodeId] = heap.shift()!;
-      
-      if (visited.has(nodeId)) continue;
-      visited.add(nodeId);
-      
-      if (nodeId === destination) break;
-
-      for (const [neighborId, edgeId] of neighbors(this.network, nodeId)) {
-        const edge = getRoad(this.network, edgeId);
-        const edgeCost = defaultCost(edge);
-        if (edgeCost === Infinity) continue;
-        
-        const candidate = currentDist + edgeCost;
-        if (candidate < (dist.get(neighborId) ?? Infinity)) {
-          dist.set(neighborId, candidate);
-          prev.set(neighborId, { node: nodeId, edge: edgeId });
-          heap.push([candidate, neighborId]);
-        }
-      }
-    }
-
-    if (!dist.has(destination)) return null;
-
-    const nodes: string[] = [destination];
-    const edges: string[] = [];
-    let current = destination;
-    
-    while (current !== origin) {
-      const { node, edge } = prev.get(current)!;
-      edges.push(edge);
-      nodes.push(node);
-      current = node;
-    }
-    
-    nodes.reverse();
-    edges.reverse();
-
-    return {
-      nodes,
-      edges,
-      totalCost: dist.get(destination)!,
-      computationMs: performance.now() - start,
-      algorithm: 'dijkstra',
-    };
-  }
-
-  private aStar(origin: string, destination: string): Route | null {
-    const start = performance.now();
-    
-    const gScore = new Map<string, number>([[origin, 0]]);
-    const fScore = new Map<string, number>([[origin, heuristic(origin, destination, this.network)]]);
-    const prev = new Map<string, { node: string; edge: string }>();
-    
-    const openSet = new Set<string>([origin]);
-    const closedSet = new Set<string>();
-
-    while (openSet.size > 0) {
-      let current: string | null = null;
-      let lowestF = Infinity;
-      
-      for (const nodeId of openSet) {
-        const f = fScore.get(nodeId) ?? Infinity;
-        if (f < lowestF) {
-          lowestF = f;
-          current = nodeId;
-        }
-      }
-
-      if (!current) break;
-      if (current === destination) break;
-
-      openSet.delete(current);
-      closedSet.add(current);
-
-      for (const [neighborId, edgeId] of neighbors(this.network, current)) {
-        if (closedSet.has(neighborId)) continue;
-
-        const edge = getRoad(this.network, edgeId);
-        const edgeCost = defaultCost(edge);
-        if (edgeCost === Infinity) continue;
-
-        const tentativeG = (gScore.get(current) ?? Infinity) + edgeCost;
-        
-        if (tentativeG < (gScore.get(neighborId) ?? Infinity)) {
-          prev.set(neighborId, { node: current, edge: edgeId });
-          gScore.set(neighborId, tentativeG);
-          fScore.set(neighborId, tentativeG + heuristic(neighborId, destination, this.network));
-          openSet.add(neighborId);
-        }
-      }
-    }
-
-    if (!gScore.has(destination)) return null;
-
-    const nodes: string[] = [destination];
-    const edges: string[] = [];
-    let current = destination;
-    
-    while (current !== origin) {
-      const { node, edge } = prev.get(current)!;
-      edges.push(edge);
-      nodes.push(node);
-      current = node;
-    }
-    
-    nodes.reverse();
-    edges.reverse();
-
-    return {
-      nodes,
-      edges,
-      totalCost: gScore.get(destination)!,
-      computationMs: performance.now() - start,
-      algorithm: 'astar',
-    };
-  }
-
-  private moveVehicles(): void {
-    for (const vehicle of this.vehicles.values()) {
-      if (vehicle.arrived) continue;
-      
-      if (!vehicle.currentEdge) continue;
-      
-      const edge = getRoad(this.network, vehicle.currentEdge);
-      const travelTime = edge.currentTravelTime;
-      
-      vehicle.progress += 1 / travelTime;
-      
-      if (vehicle.progress >= 1) {
-        this.advanceVehicle(vehicle);
-      }
-    }
+  private moveVehicles(lights: Map<string, TrafficLight>): void {
+    updateVehicleKinematics(
+      Array.from(this.vehicles.values()),
+      this.network,
+      lights,
+      (vehicle) => this.advanceVehicle(vehicle)
+    );
   }
 
   private advanceVehicle(vehicle: Vehicle): void {
@@ -335,28 +204,3 @@ export class VehicleManager {
   }
 }
 
-function heuristic(nodeId: string, destination: string, network: RoadNetwork): number {
-  const node = network.nodes.get(nodeId);
-  const dest = network.nodes.get(destination);
-  if (!node || !dest) return 0;
-  
-  const dx = node.x - dest.x;
-  const dy = node.y - dest.y;
-  return Math.sqrt(dx * dx + dy * dy) / 15;
-}
-
-function neighbors(network: RoadNetwork, nodeId: string): Iterable<[string, string]> {
-  const result: [string, string][] = [];
-  for (const edgeId of network.adjacency.get(nodeId) ?? []) {
-    const road = network.edges.get(edgeId)!;
-    if (isTraversable(road)) {
-      result.push([road.destination, edgeId]);
-    }
-  }
-  return result;
-}
-
-function defaultCost(road: Road): number {
-  if (!isTraversable(road)) return Infinity;
-  return road.currentTravelTime;
-}

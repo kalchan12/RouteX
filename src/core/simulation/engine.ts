@@ -122,7 +122,7 @@ export class SimulationEngine {
     this.clock.step();
     this.processEvents();
     this.processTrafficSpike();
-    this.manager.step(this.clock.tick);
+    this.manager.step(this.clock.tick, this.lights);
     this.updateNetworkState();
     this.stepTrafficLights();
     this.checkCompletion();
