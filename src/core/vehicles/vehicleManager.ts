@@ -1,4 +1,4 @@
-import { Vehicle, VehicleType, VehicleState, Route, RoadNetwork, Road, Node } from '../../types';
+import { Vehicle, VehicleType, VehicleState, Route, RoadNetwork, Node } from '../../types';
 import { getRoad, isTraversable } from '../network';
 import { updateVehicleKinematics } from './movement';
 import { TrafficLight } from '../traffic/trafficLights';

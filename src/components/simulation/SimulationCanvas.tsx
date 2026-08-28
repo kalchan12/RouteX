@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SimulationSnapshot } from '../../types';
 import { SimulationRenderer, createSimulationRenderer } from '../../rendering/pixi';
 
@@ -9,6 +9,7 @@ interface SimulationCanvasProps {
 export function SimulationCanvas({ snapshot }: SimulationCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<SimulationRenderer | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -17,22 +18,22 @@ export function SimulationCanvas({ snapshot }: SimulationCanvasProps) {
     rendererRef.current = renderer;
 
     renderer.initialize(container).then(() => {
-      if (snapshot) {
-        renderer.render(snapshot);
-      }
+      setIsReady(true);
     });
 
     return () => {
       renderer.destroy();
       rendererRef.current = null;
+      setIsReady(false);
     };
   }, []);
 
+  // Re-render whenever either the renderer becomes ready or a new snapshot arrives
   useEffect(() => {
-    if (rendererRef.current && snapshot) {
+    if (isReady && rendererRef.current && snapshot) {
       rendererRef.current.render(snapshot);
     }
-  }, [snapshot]);
+  }, [isReady, snapshot]);
 
   return (
     <div 
