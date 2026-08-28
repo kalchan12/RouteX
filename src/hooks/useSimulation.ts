@@ -37,10 +37,15 @@ export function useSimulation() {
   }, [setScenarios, setSelectedScenarioId, selectedScenarioId]);
 
   useEffect(() => {
+    // Guard against stale messages from terminated workers (React StrictMode)
+    let cancelled = false;
+
     const worker = new Worker(new URL('../workers/simulation.worker.ts', import.meta.url), { type: 'module' });
     workerRef.current = worker;
 
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      if (cancelled) return;
+
       const { type, payload } = event.data;
       
       switch (type) {
@@ -67,7 +72,9 @@ export function useSimulation() {
     };
 
     worker.onerror = (error) => {
-      console.error('Worker error:', error);
+      if (!cancelled) {
+        console.error('Worker error:', error);
+      }
     };
 
     const initialScenario = defaultScenarios.find(s => s.id === selectedScenarioId) || defaultScenarios[0];
@@ -76,7 +83,10 @@ export function useSimulation() {
     }
 
     return () => {
+      cancelled = true;
       worker.terminate();
+      workerRef.current = null;
+      setIsWorkerReady(false);
     };
   }, []);
 

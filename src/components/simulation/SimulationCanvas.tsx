@@ -14,21 +14,36 @@ export function SimulationCanvas({ snapshot }: SimulationCanvasProps) {
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
+
+    // Guard against stale async callbacks from React StrictMode double-mount.
+    // When cleanup runs, `cancelled` becomes true, preventing the old
+    // renderer's init promise from setting isReady on the wrong instance.
+    let cancelled = false;
+
     const renderer = createSimulationRenderer();
     rendererRef.current = renderer;
 
     renderer.initialize(container).then(() => {
-      setIsReady(true);
+      if (!cancelled) {
+        setIsReady(true);
+      }
+    }).catch((err) => {
+      // Swallow errors from destroyed renderers (StrictMode cleanup during init)
+      if (!cancelled) {
+        console.error('Renderer init failed:', err);
+      }
     });
 
     return () => {
+      cancelled = true;
       renderer.destroy();
       rendererRef.current = null;
       setIsReady(false);
     };
   }, []);
 
-  // Re-render whenever either the renderer becomes ready or a new snapshot arrives
+  // Render whenever the renderer becomes ready OR a new snapshot arrives.
+  // Both conditions must be true.
   useEffect(() => {
     if (isReady && rendererRef.current && snapshot) {
       rendererRef.current.render(snapshot);

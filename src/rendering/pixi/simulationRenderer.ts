@@ -67,6 +67,10 @@ export class SimulationRenderer {
       resizeTo: container,
     });
 
+    // Guard: destroy() may have been called while we were awaiting init
+    // (e.g. React StrictMode unmount). Bail out cleanly.
+    if (!this.app || !this.container) return;
+
     container.appendChild(this.app.canvas);
 
     this.setupWorld();
@@ -287,9 +291,14 @@ export class SimulationRenderer {
 
   destroy(): void {
     if (this.app) {
-      this.app.destroy(true, { children: true });
+      try {
+        this.app.destroy(true, { children: true });
+      } catch {
+        // Ignore errors from partially-initialized apps
+      }
       this.app = null;
     }
+    this.container = null;
     this.worldContainer = null;
     this.layers = null;
     this.roadRenderer = null;
@@ -297,6 +306,7 @@ export class SimulationRenderer {
     this.vehicleRenderer = null;
     this.trafficLightRenderer = null;
     this.isInitialized = false;
+    this.hasFit = false;
   }
 }
 
