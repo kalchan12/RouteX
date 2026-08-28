@@ -155,25 +155,25 @@ Exit Criteria:
 
 # 7. Phase 2 — Network Model
 
-**Status:** NOT_STARTED
+**Status:** IN_PROGRESS
 
 Tasks:
 
-- [ ] P0 — Implement graph representation
-- [ ] P0 — Implement node model
-- [ ] P0 — Implement edge model
-- [ ] P1 — Implement network builder
-- [ ] P1 — Load network from scenario
+- [x] P0 — Implement graph representation
+- [x] P0 — Implement node model
+- [x] P0 — Implement edge model
+- [x] P1 — Implement network builder
+- [x] P1 — Load network from scenario
 - [ ] P1 — Validate network
 - [ ] P1 — Add network tests
 
 Exit Criteria:
 
 ```text
-[ ] Graph can be created
-[ ] Roads can be represented
-[ ] Nodes can be connected
-[ ] Network can be loaded
+[x] Graph can be created
+[x] Roads can be represented
+[x] Nodes can be connected
+[x] Network can be loaded
 [ ] Network tests pass
 ```
 
@@ -181,13 +181,13 @@ Exit Criteria:
 
 # 8. Phase 3 — Routing
 
-**Status:** NOT_STARTED
+**Status:** IN_PROGRESS
 
 Tasks:
 
-- [ ] P0 — Define routing interface
-- [ ] P0 — Implement Dijkstra
-- [ ] P0 — Implement A*
+- [x] P0 — Define routing interface
+- [x] P0 — Implement Dijkstra
+- [x] P0 — Implement A*
 - [ ] P1 — Implement dynamic routing
 - [ ] P1 — Support congestion-aware costs
 - [ ] P1 — Support closed roads
@@ -207,26 +207,26 @@ Exit Criteria:
 
 # 9. Phase 4 — Simulation
 
-**Status:** NOT_STARTED
+**Status:** IN_PROGRESS
 
 Tasks:
 
-- [ ] P0 — Implement simulation clock
-- [ ] P0 — Implement simulation state
-- [ ] P0 — Implement simulation engine
-- [ ] P0 — Implement vehicle model
+- [x] P0 — Implement simulation clock
+- [x] P0 — Implement simulation state
+- [x] P0 — Implement simulation engine
+- [x] P0 — Implement vehicle model
 - [ ] P0 — Implement vehicle movement
-- [ ] P1 — Implement vehicle spawning
+- [x] P1 — Implement vehicle spawning
 - [ ] P1 — Implement deterministic random seed
-- [ ] P1 — Implement simulation events
+- [x] P1 — Implement simulation events
 - [ ] P0 — Add simulation tests
 
 Exit Criteria:
 
 ```text
-[ ] Vehicles can spawn
-[ ] Vehicles can move
-[ ] Simulation clock works
+[x] Vehicles can spawn
+[x] Vehicles can move
+[x] Simulation clock works
 [ ] Simulation can pause
 [ ] Simulation can resume
 [ ] Simulation can reset
@@ -237,15 +237,15 @@ Exit Criteria:
 
 # 10. Phase 5 — Traffic
 
-**Status:** NOT_STARTED
+**Status:** IN_PROGRESS
 
 Tasks:
 
 - [ ] P0 — Implement road capacity
 - [ ] P0 — Implement congestion model
 - [ ] P0 — Implement travel-time calculation
-- [ ] P1 — Implement traffic lights
-- [ ] P1 — Implement traffic-light state transitions
+- [x] P1 — Implement traffic lights
+- [x] P1 — Implement traffic-light state transitions
 - [ ] P1 — Implement adaptive traffic signals
 - [ ] P0 — Add traffic tests
 
@@ -253,14 +253,14 @@ Tasks:
 
 # 11. Phase 6 — Scenarios
 
-**Status:** NOT_STARTED
+**Status:** IN_PROGRESS
 
 Tasks:
 
-- [ ] P0 — Normal traffic scenario
-- [ ] P0 — Rush-hour scenario
-- [ ] P1 — Accident scenario
-- [ ] P1 — Road closure scenario
+- [x] P0 — Normal traffic scenario
+- [x] P0 — Rush-hour scenario
+- [x] P1 — Accident scenario
+- [x] P1 — Road closure scenario
 - [ ] P1 — Emergency vehicle scenario
 - [ ] P1 — Scenario loader
 - [ ] P1 — Scenario validation
@@ -358,7 +358,7 @@ Current Task:
 Implement vehicle movement with lane following and traffic light compliance
 
 Status:
-NOT_STARTED
+COMPLETE
 
 Started:
 2026-08-23
@@ -383,7 +383,7 @@ The AI MUST identify the next recommended task.
 
 ```text
 Next Task:
-Implement vehicle movement with lane following and traffic light compliance
+Implement full multi-lane logic and intersection collision avoidance
 
 Priority:
 P0
@@ -399,6 +399,7 @@ The foundation, state layer (Zustand), persistence layer (Dexie), validation sch
 Keep a short history of meaningful completed work.
 
 ```text
+- [2026-08-28] Refactored routing algorithms to remove duplication, implemented realistic vehicle kinematics (acceleration, braking, car-following, traffic light compliance).
 - [2026-08-23] Pre-simulation architecture audit completed and foundation gaps resolved
 - [2026-08-23] Integrated SimulationCanvas with modular SimulationRenderer (roads, nodes, vehicles, traffic lights)
 - [2026-08-23] Added Zustand store (src/stores/simulationStore.ts) connected to useSimulation hook
