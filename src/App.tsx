@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useSimulation } from './hooks/useSimulation';
 import { useSimulationStore } from './stores';
 import { LoginPortal } from './components/auth/LoginPortal';
@@ -38,13 +38,13 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isIncidentsOpen, setIsIncidentsOpen] = useState(false);
 
-  const handleSelectRegion = (scenarioId: string) => {
+  const handleSelectRegion = useCallback((scenarioId: string) => {
     selectScenario(scenarioId);
     setViewMode('simulation');
     if (status !== 'running') {
       start();
     }
-  };
+  }, [selectScenario, setViewMode, status, start]);
 
   // If not authenticated, render Mission Control Login Portal with "Welcome Operator" animation sequence
   if (!isAuthenticated) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import L from 'leaflet';
 import { useSimulationStore } from '../../stores';
 
@@ -98,13 +98,18 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
   },
 ];
 
-export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
+export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const baseTileLayerRef = useRef<L.TileLayer | null>(null);
   const labelsLayerRef = useRef<L.TileLayer | null>(null);
   const operatorMarkerRef = useRef<L.Marker | null>(null);
   const operatorCircleRef = useRef<L.Circle | null>(null);
+  const onSelectRegionRef = useRef(onSelectRegion);
+
+  useEffect(() => {
+    onSelectRegionRef.current = onSelectRegion;
+  }, [onSelectRegion]);
 
   const {
     setSelectedRoadId,
@@ -118,13 +123,14 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
 
   const [gpsStatus, setGpsStatus] = useState<'acquiring' | 'locked' | 'simulated'>('acquiring');
 
-  // Switch tile layers based on mapLayerType
-  const updateTileLayers = useCallback((layerType: 'dark' | 'satellite' | 'hybrid') => {
+  // Switch tile layers without destroying the map
+  const applyTileLayer = useCallback((layerType: 'dark' | 'satellite' | 'hybrid') => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
     if (baseTileLayerRef.current) {
       map.removeLayer(baseTileLayerRef.current);
+      baseTileLayerRef.current = null;
     }
     if (labelsLayerRef.current) {
       map.removeLayer(labelsLayerRef.current);
@@ -164,8 +170,9 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
     }
   }, []);
 
+  // Initialize Map ONCE on mount
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const adamaCenter: L.LatLngTuple = [8.5400, 39.2700];
     const southWest = L.latLng(8.4600, 39.1800);
@@ -185,8 +192,13 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
 
     mapInstanceRef.current = map;
 
-    // Initialize Base Layer
-    updateTileLayers(mapLayerType);
+    // Apply initial layer
+    applyTileLayer(mapLayerType);
+
+    // Ensure map tiles size correctly on mount
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
 
     // Glowing Neon Traffic Arterials
     L.polyline([
@@ -234,7 +246,7 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
       opacity: 0.9,
     }).addTo(map);
 
-    // Create checkpoint markers
+    // Create Checkpoint Markers
     ADAMA_CHECKPOINTS.forEach((cp) => {
       const pulseColorClass = cp.color === 'primary' 
         ? 'map-pulse bg-primary text-primary border-primary' 
@@ -271,7 +283,7 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
       marker.on('click', () => {
         setSelectedRoadId(null);
         setSelectedVehicleId(null);
-        onSelectRegion(cp.scenarioId, cp.name);
+        onSelectRegionRef.current(cp.scenarioId, cp.name);
       });
     });
 
@@ -283,7 +295,6 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
           const lng = pos.coords.longitude;
           const accuracy = pos.coords.accuracy || 15;
 
-          // Check if operator position is near Adama, or calibrate to Adama grid
           const isNearAdama = lat >= 8.46 && lat <= 8.62 && lng >= 39.18 && lng <= 39.36;
           const opLat = isNearAdama ? lat : 8.5410;
           const opLng = isNearAdama ? lng : 39.2690;
@@ -297,7 +308,6 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
           setGpsStatus(isNearAdama ? 'locked' : 'simulated');
         },
         () => {
-          // Fallback location: Posta Bet Dispatch HQ
           setOperatorLocation({
             lat: 8.5410,
             lng: 39.2690,
@@ -321,8 +331,19 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
     return () => {
       map.remove();
       mapInstanceRef.current = null;
+      baseTileLayerRef.current = null;
+      labelsLayerRef.current = null;
+      operatorMarkerRef.current = null;
+      operatorCircleRef.current = null;
     };
-  }, [onSelectRegion, setSelectedRoadId, setSelectedVehicleId, setOperatorLocation, updateTileLayers, mapLayerType]);
+  }, []); // Run ONLY once on mount!
+
+  // Update map tile layers when mapLayerType changes
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      applyTileLayer(mapLayerType);
+    }
+  }, [mapLayerType, applyTileLayer]);
 
   // Update Operator Glowing Blue Dot Marker whenever operatorLocation changes
   useEffect(() => {
@@ -366,7 +387,6 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
       </div>
     `);
 
-    // Accuracy Circle
     const circle = L.circle([operatorLocation.lat, operatorLocation.lng], {
       radius: operatorLocation.accuracy || 40,
       color: '#00e5ff',
@@ -382,7 +402,6 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
 
   const handleLayerChange = (type: 'dark' | 'satellite' | 'hybrid') => {
     setMapLayerType(type);
-    updateTileLayers(type);
   };
 
   const handleRecenterAdama = () => {
@@ -516,4 +535,6 @@ export const MapView: React.FC<MapViewProps> = ({ onSelectRegion }) => {
       </div>
     </div>
   );
-};
+});
+
+MapView.displayName = 'MapView';
