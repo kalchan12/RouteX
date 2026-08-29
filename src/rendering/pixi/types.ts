@@ -48,24 +48,24 @@ export interface Viewport {
 }
 
 export const VEHICLE_COLORS = {
-  [VehicleType.NORMAL]: 0x38bdf8,
-  [VehicleType.EMERGENCY]: 0xf43f5e,
-  bus: 0xf59e0b,
-  truck: 0x8b5cf6,
+  [VehicleType.NORMAL]: 0x4cd7f6, // Primary Cyan
+  [VehicleType.EMERGENCY]: 0xffb4ab, // Error / Emergency Neon Red
+  bus: 0xb4c5ff, // Secondary Electric Blue
+  truck: 0xffb873, // Tertiary Amber
 };
 
 export const ROAD_STATUS_COLORS = {
-  [RoadStatus.OPEN]: 0x334155,
-  [RoadStatus.CLOSED]: 0x991b1b,
-  [RoadStatus.ACCIDENT]: 0xdc2626,
-  [RoadStatus.CONSTRUCTION]: 0x92400e,
+  [RoadStatus.OPEN]: 0x1e1f26, // Surface Container
+  [RoadStatus.CLOSED]: 0x93000a, // Error Container
+  [RoadStatus.ACCIDENT]: 0xffb4ab, // Error Red
+  [RoadStatus.CONSTRUCTION]: 0xe89337, // Tertiary Container
 };
 
 export function getCongestionColor(congestion: number): number {
-  if (congestion < 0.3) return 0x22c55e;
-  if (congestion < 0.6) return 0x3b82f6;
-  if (congestion < 0.8) return 0xf59e0b;
-  return 0xef4444;
+  if (congestion < 0.25) return 0x4cd7f6; // Cyan (Flow)
+  if (congestion < 0.5) return 0x06b6d4; // Primary Container
+  if (congestion < 0.75) return 0xffb873; // Tertiary Amber (Warning)
+  return 0xffb4ab; // Error Neon Red (Critical)
 }
 
 export function getRoadColor(road: Road): number {
@@ -80,9 +80,9 @@ export function getRoadColor(road: Road): number {
 
 export function getNodeColor(type: Node['type']): number {
   switch (type) {
-    case 'origin': return 0x22c55e;
-    case 'destination': return 0xef4444;
+    case 'origin': return 0x4cd7f6;
+    case 'destination': return 0xb4c5ff;
     case 'hospital': return 0xf472b6;
-    default: return 0x64748b;
+    default: return 0x869397;
   }
 }
