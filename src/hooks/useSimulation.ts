@@ -4,7 +4,7 @@ import { defaultScenarios } from '../scenarios/defaultScenarios';
 import { useSimulationStore } from '../stores';
 
 interface WorkerMessage {
-  type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setSpeed';
+  type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setSpeed' | 'blockRoad' | 'spawnEmergency' | 'trafficSpike' | 'clearIncidents';
   payload?: unknown;
 }
 
@@ -22,11 +22,16 @@ export function useSimulation() {
     selectedScenarioId,
     scenarios,
     isWorkerReady,
+    selectedAlgorithm,
+    simSpeed,
     setStatus,
     setSnapshot,
     setSelectedScenarioId,
     setScenarios,
     setIsWorkerReady,
+    setSimSpeed,
+    setSelectedAlgorithm,
+    clearTimeSeriesData,
   } = useSimulationStore();
 
   useEffect(() => {
@@ -36,8 +41,22 @@ export function useSimulation() {
     }
   }, [setScenarios, setSelectedScenarioId, selectedScenarioId]);
 
+  const initWorker = useCallback((scenario: ScenarioConfig, config?: Partial<SimulationConfig>) => {
+    clearTimeSeriesData();
+    workerRef.current?.postMessage({ 
+      type: 'init', 
+      payload: { 
+        scenario, 
+        config: {
+          algorithm: selectedAlgorithm,
+          speed: simSpeed,
+          ...config,
+        } 
+      } 
+    });
+  }, [selectedAlgorithm, simSpeed, clearTimeSeriesData]);
+
   useEffect(() => {
-    // Guard against stale messages from terminated workers (React StrictMode)
     let cancelled = false;
 
     const worker = new Worker(new URL('../workers/simulation.worker.ts', import.meta.url), { type: 'module' });
@@ -79,7 +98,16 @@ export function useSimulation() {
 
     const initialScenario = defaultScenarios.find(s => s.id === selectedScenarioId) || defaultScenarios[0];
     if (initialScenario) {
-      worker.postMessage({ type: 'init', payload: { scenario: initialScenario } });
+      worker.postMessage({ 
+        type: 'init', 
+        payload: { 
+          scenario: initialScenario,
+          config: {
+            algorithm: selectedAlgorithm,
+            speed: simSpeed,
+          }
+        } 
+      });
     }
 
     return () => {
@@ -89,18 +117,6 @@ export function useSimulation() {
       setIsWorkerReady(false);
     };
   }, []);
-
-  const initWorker = useCallback((scenario: ScenarioConfig, config?: Partial<SimulationConfig>) => {
-    workerRef.current?.postMessage({ type: 'init', payload: { scenario, config } });
-  }, []);
-
-  const selectScenario = useCallback((scenarioId: string) => {
-    const scenario = scenarios.find(s => s.id === scenarioId);
-    if (scenario) {
-      setSelectedScenarioId(scenarioId);
-      initWorker(scenario);
-    }
-  }, [scenarios, setSelectedScenarioId, initWorker]);
 
   const sendCommand = useCallback((type: WorkerMessage['type'], payload?: unknown) => {
     workerRef.current?.postMessage({ type, payload });
@@ -115,8 +131,46 @@ export function useSimulation() {
       if (scenario) initWorker(scenario);
     }
   }, [sendCommand, selectedScenarioId, scenarios, initWorker]);
+  
   const step = useCallback(() => sendCommand('step'), [sendCommand]);
   const run = useCallback((steps = 100) => sendCommand('run', { steps }), [sendCommand]);
+
+  const changeSpeed = useCallback((speed: number) => {
+    setSimSpeed(speed);
+    sendCommand('setSpeed', { speed });
+  }, [setSimSpeed, sendCommand]);
+
+  const selectScenario = useCallback((scenarioId: string) => {
+    const scenario = scenarios.find(s => s.id === scenarioId);
+    if (scenario) {
+      setSelectedScenarioId(scenarioId);
+      initWorker(scenario);
+    }
+  }, [scenarios, setSelectedScenarioId, initWorker]);
+
+  const changeAlgorithm = useCallback((algo: 'dijkstra' | 'astar' | 'dynamic_hld') => {
+    setSelectedAlgorithm(algo);
+    const scenario = scenarios.find(s => s.id === selectedScenarioId) || defaultScenarios[0];
+    if (scenario) {
+      initWorker(scenario, { algorithm: algo });
+    }
+  }, [setSelectedAlgorithm, scenarios, selectedScenarioId, initWorker]);
+
+  const blockRoad = useCallback((roadId?: string) => {
+    sendCommand('blockRoad', { roadId });
+  }, [sendCommand]);
+
+  const spawnEmergency = useCallback((count = 2) => {
+    sendCommand('spawnEmergency', { count });
+  }, [sendCommand]);
+
+  const triggerTrafficSpike = useCallback((count = 5, duration = 120) => {
+    sendCommand('trafficSpike', { count, duration });
+  }, [sendCommand]);
+
+  const clearIncidents = useCallback(() => {
+    sendCommand('clearIncidents');
+  }, [sendCommand]);
 
   return {
     snapshot,
@@ -127,7 +181,13 @@ export function useSimulation() {
     reset,
     step,
     run,
+    changeSpeed,
     selectScenario,
+    changeAlgorithm,
+    blockRoad,
+    spawnEmergency,
+    triggerTrafficSpike,
+    clearIncidents,
     scenarios,
     selectedScenarioId,
   };

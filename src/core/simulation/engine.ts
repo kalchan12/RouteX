@@ -203,6 +203,32 @@ export class SimulationEngine {
     return total / emergencies.length;
   }
 
+  public injectEvent(raw: Omit<SimulationEvent, 'id'>): void {
+    const event = createEvent(
+      raw.type,
+      raw.tick || this.clock.tick,
+      raw.duration || 100,
+      raw.roadId || null,
+      raw.nodeId || null,
+      raw.payload || {}
+    );
+    this.applyEvent(event);
+  }
+
+  public blockRandomRoad(): string | null {
+    const openEdges = Array.from(this.network.edges.values()).filter(e => e.status === RoadStatus.OPEN);
+    if (openEdges.length === 0) return null;
+    const target = openEdges[Math.floor(Math.random() * openEdges.length)];
+    this.setRoadStatus(target.id, RoadStatus.CLOSED);
+    return target.id;
+  }
+
+  public clearAllIncidents(): void {
+    for (const road of this.network.edges.values()) {
+      road.status = RoadStatus.OPEN;
+    }
+  }
+
   private processEvents(): void {
     for (const event of this.events.pending(this.clock.tick)) {
       this.events.markApplied(event);

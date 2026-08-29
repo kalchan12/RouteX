@@ -2,7 +2,7 @@ import { SimulationEngine } from '../core/simulation/engine';
 import { SimulationStatus, ScenarioConfig, SimulationConfig } from '../types';
 
 interface EngineMessage {
-  type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setSpeed';
+  type: 'init' | 'step' | 'run' | 'pause' | 'resume' | 'stop' | 'reset' | 'getSnapshot' | 'setSpeed' | 'blockRoad' | 'spawnEmergency' | 'trafficSpike' | 'clearIncidents';
   payload?: any;
 }
 
@@ -160,6 +160,63 @@ self.onmessage = (event: MessageEvent<EngineMessage>) => {
           if (intervalId !== null) {
             startLoop();
           }
+        }
+        break;
+      }
+
+      case 'blockRoad': {
+        if (engine) {
+          if (payload?.roadId) {
+            engine.injectEvent({
+              type: 'road_closure' as any,
+              tick: engine.getTick(),
+              duration: 300,
+              roadId: payload.roadId,
+              nodeId: null,
+              payload: {},
+            });
+          } else {
+            engine.blockRandomRoad();
+          }
+          (self as unknown as Worker).postMessage({ type: 'snapshot', payload: engine.snapshot() });
+        }
+        break;
+      }
+
+      case 'spawnEmergency': {
+        if (engine) {
+          engine.injectEvent({
+            type: 'emergency_vehicle' as any,
+            tick: engine.getTick(),
+            duration: 0,
+            roadId: null,
+            nodeId: null,
+            payload: { count: payload?.count || 2 },
+          });
+          (self as unknown as Worker).postMessage({ type: 'snapshot', payload: engine.snapshot() });
+        }
+        break;
+      }
+
+      case 'trafficSpike': {
+        if (engine) {
+          engine.injectEvent({
+            type: 'traffic_spike' as any,
+            tick: engine.getTick(),
+            duration: payload?.duration || 100,
+            roadId: null,
+            nodeId: null,
+            payload: { count: payload?.count || 4 },
+          });
+          (self as unknown as Worker).postMessage({ type: 'snapshot', payload: engine.snapshot() });
+        }
+        break;
+      }
+
+      case 'clearIncidents': {
+        if (engine) {
+          engine.clearAllIncidents();
+          (self as unknown as Worker).postMessage({ type: 'snapshot', payload: engine.snapshot() });
         }
         break;
       }
