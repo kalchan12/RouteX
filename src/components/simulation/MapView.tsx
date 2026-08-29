@@ -139,10 +139,10 @@ export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
 
     if (layerType === 'dark') {
       baseTileLayerRef.current = L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
-          subdomains: 'abcd',
           maxZoom: 19,
+          className: 'cyber-dark-tiles',
         }
       ).addTo(map);
     } else if (layerType === 'satellite') {
@@ -150,6 +150,7 @@ export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
         'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
+          className: 'satellite-tiles',
         }
       ).addTo(map);
     } else if (layerType === 'hybrid') {
@@ -157,14 +158,16 @@ export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
         'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         {
           maxZoom: 19,
+          className: 'satellite-tiles',
         }
       ).addTo(map);
 
       labelsLayerRef.current = L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
-          subdomains: 'abcd',
           maxZoom: 19,
+          opacity: 0.65,
+          className: 'hybrid-labels',
         }
       ).addTo(map);
     }
