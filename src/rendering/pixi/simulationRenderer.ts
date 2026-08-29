@@ -268,6 +268,22 @@ export class SimulationRenderer {
     this.viewport.scale = newScale;
   }
 
+  centerOn(worldX: number, worldY: number, zoomLevel?: number): void {
+    if (!this.app || !this.worldContainer) return;
+
+    const screenW = this.app.screen.width || this.container?.clientWidth || 800;
+    const screenH = this.app.screen.height || this.container?.clientHeight || 600;
+
+    const scale = zoomLevel ?? this.viewport.scale;
+    
+    this.viewport.scale = scale;
+    this.viewport.x = screenW / 2 - worldX * scale;
+    this.viewport.y = screenH / 2 - worldY * scale;
+
+    this.worldContainer.scale.set(scale, scale);
+    this.worldContainer.position.set(this.viewport.x, this.viewport.y);
+  }
+
   pan(dx: number, dy: number): void {
     if (!this.worldContainer) return;
     

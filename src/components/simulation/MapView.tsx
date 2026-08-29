@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import L from 'leaflet';
 import { useSimulationStore } from '../../stores';
+import { IncidentType, IncidentSeverity } from '../../types';
 
 interface MapViewProps {
   onSelectRegion: (scenarioId: string, regionName: string) => void;
@@ -96,6 +97,45 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
     lat: 8.5360,
     lng: 39.2850,
   },
+];
+
+const ACTIVE_INCIDENTS = [
+  {
+    id: 'inc-1',
+    type: IncidentType.ACCIDENT,
+    severity: IncidentSeverity.SEVERE,
+    lat: 8.5415,
+    lng: 39.2705,
+    description: 'Multi-vehicle collision',
+    reportedAt: Date.now() - 1000 * 60 * 15,
+    assignedUnits: ['Unit-4', 'Ambulance-1'],
+    roadId: null,
+    estimatedClearanceMinutes: 45
+  },
+  {
+    id: 'inc-2',
+    type: IncidentType.ROAD_CLOSURE,
+    severity: IncidentSeverity.MODERATE,
+    lat: 8.5080,
+    lng: 39.2820,
+    description: 'Road closure: bridge maintenance',
+    reportedAt: Date.now() - 1000 * 60 * 120,
+    assignedUnits: ['Eng-Crew-B'],
+    roadId: null,
+    estimatedClearanceMinutes: 180
+  },
+  {
+    id: 'inc-3',
+    type: IncidentType.ACCIDENT,
+    severity: IncidentSeverity.CRITICAL,
+    lat: 8.5638,
+    lng: 39.2905,
+    description: 'Emergency: medical response needed',
+    reportedAt: Date.now() - 1000 * 60 * 5,
+    assignedUnits: ['Ambulance-2', 'Fire-1'],
+    roadId: null,
+    estimatedClearanceMinutes: 60
+  }
 ];
 
 export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
@@ -287,6 +327,38 @@ export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
         setSelectedRoadId(null);
         setSelectedVehicleId(null);
         onSelectRegionRef.current(cp.scenarioId, cp.name);
+      });
+    });
+
+    // Create Incident Markers
+    ACTIVE_INCIDENTS.forEach((incident) => {
+      const customHtml = `
+        <div class="group flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none">
+          <div class="w-5 h-5 rounded-full map-pulse bg-error text-error border-2 border-background shadow-lg mb-1.5 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[12px] text-on-primary">warning</span>
+          </div>
+          <div class="bg-[#12131a]/95 backdrop-blur-md border border-error px-2.5 py-1 rounded text-center shadow-xl group-hover:bg-error/10 group-hover:scale-105 transition-all min-w-[150px]">
+            <div class="font-mono text-[11px] font-bold text-error flex items-center justify-center gap-1">
+              ${incident.description}
+            </div>
+            <div class="text-[10px] text-error mt-0.5">CLICK TO SIMULATE</div>
+          </div>
+        </div>
+      `;
+
+      const markerIcon = L.divIcon({
+        html: customHtml,
+        className: 'custom-incident-marker z-30',
+        iconSize: [160, 60],
+        iconAnchor: [80, 30],
+      });
+
+      const marker = L.marker([incident.lat, incident.lng], { icon: markerIcon }).addTo(map);
+
+      marker.on('click', () => {
+        setSelectedRoadId(null);
+        setSelectedVehicleId(null);
+        useSimulationStore.getState().enterIncidentSimulation(incident);
       });
     });
 

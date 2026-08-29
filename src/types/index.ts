@@ -217,3 +217,17 @@ export interface ScenarioConfig {
   vehicleSpawnRate: number;
   vehicleTypes: VehicleType[];
 }
+export interface ActiveIncident {
+  id: string;
+  type: IncidentType;
+  severity: IncidentSeverity;
+  lat: number;
+  lng: number;
+  description: string;
+  reportedAt: number;
+  assignedUnits: string[];
+  roadId: string | null;
+  estimatedClearanceMinutes: number | null;
+}
+
+export type SimulationMode = 'dashboard' | 'transitioning_in' | 'simulation' | 'transitioning_out';

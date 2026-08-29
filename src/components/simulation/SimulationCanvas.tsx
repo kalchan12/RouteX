@@ -6,11 +6,13 @@ import { useSimulationStore } from '../../stores';
 interface SimulationCanvasProps {
   snapshot: SimulationSnapshot | null;
   onBackToRegion?: () => void;
+  focusCoordinates?: { x: number; y: number; zoom?: number };
 }
 
 export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   snapshot,
   onBackToRegion,
+  focusCoordinates,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<SimulationRenderer | null>(null);
@@ -51,8 +53,12 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   useEffect(() => {
     if (isReady && rendererRef.current && snapshot) {
       rendererRef.current.render(snapshot);
+      
+      if (focusCoordinates) {
+        rendererRef.current.centerOn(focusCoordinates.x, focusCoordinates.y, focusCoordinates.zoom || 2);
+      }
     }
-  }, [isReady, snapshot]);
+  }, [isReady, snapshot, focusCoordinates]);
 
   const handleZoomIn = useCallback(() => {
     rendererRef.current?.zoom(1.25);

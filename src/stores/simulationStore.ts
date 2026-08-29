@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SimulationSnapshot, ScenarioConfig, SimulationStatus } from '../types';
+import { SimulationSnapshot, ScenarioConfig, SimulationStatus, ActiveIncident, SimulationMode } from '../types';
 
 export interface TelemetryPoint {
   tick: number;
@@ -65,6 +65,20 @@ interface SimulationStoreState {
   addTelemetryPoint: (point: TelemetryPoint) => void;
   clearTimeSeriesData: () => void;
   setNotificationCount: (count: number) => void;
+
+  // Incident Simulation State
+  simulationMode: SimulationMode;
+  activeIncident: ActiveIncident | null;
+  panelsVisible: boolean;
+  selectedEntityId: string | null;
+  selectedEntityType: 'vehicle' | 'signal' | 'pedestrian' | 'incident' | null;
+
+  // Incident Simulation Actions
+  enterIncidentSimulation: (incident: ActiveIncident) => void;
+  exitIncidentSimulation: () => void;
+  onTransitionComplete: () => void;
+  setSelectedEntity: (id: string | null, type?: 'vehicle' | 'signal' | 'pedestrian' | 'incident' | null) => void;
+  clearSelectedEntity: () => void;
 }
 
 export const useSimulationStore = create<SimulationStoreState>((set) => ({
@@ -90,6 +104,12 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   activeRegionId: null,
   timeSeriesData: [],
   notificationCount: 3,
+
+  simulationMode: 'dashboard',
+  activeIncident: null,
+  panelsVisible: true,
+  selectedEntityId: null,
+  selectedEntityType: null,
 
   login: (id = 'RX-8842') => set({ isAuthenticated: true, operatorId: id }),
   logout: () => set({ isAuthenticated: false }),
@@ -137,4 +157,32 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
     set((state) => ({ timeSeriesData: [...state.timeSeriesData.slice(-29), point] })),
   clearTimeSeriesData: () => set({ timeSeriesData: [] }),
   setNotificationCount: (notificationCount) => set({ notificationCount }),
+  
+  enterIncidentSimulation: (incident) => set({ 
+    simulationMode: 'transitioning_in',
+    activeIncident: incident,
+    panelsVisible: false 
+  }),
+  
+  exitIncidentSimulation: () => set({ 
+    simulationMode: 'transitioning_out',
+    panelsVisible: true
+  }),
+  
+  onTransitionComplete: () => set((state) => {
+    if (state.simulationMode === 'transitioning_in') {
+      return { simulationMode: 'simulation' };
+    }
+    if (state.simulationMode === 'transitioning_out') {
+      return { 
+        simulationMode: 'dashboard', 
+        activeIncident: null,
+        panelsVisible: true 
+      };
+    }
+    return {};
+  }),
+
+  setSelectedEntity: (id, type) => set({ selectedEntityId: id, selectedEntityType: type || null }),
+  clearSelectedEntity: () => set({ selectedEntityId: null, selectedEntityType: null }),
 }));
