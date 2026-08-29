@@ -11,6 +11,10 @@ export interface TelemetryPoint {
 }
 
 interface SimulationStoreState {
+  // Auth State
+  isAuthenticated: boolean;
+  operatorName: string;
+
   status: SimulationStatus;
   snapshot: SimulationSnapshot | null;
   selectedScenarioId: string;
@@ -30,6 +34,8 @@ interface SimulationStoreState {
   notificationCount: number;
 
   // Actions
+  login: (name?: string) => void;
+  logout: () => void;
   setStatus: (status: SimulationStatus) => void;
   setSnapshot: (snapshot: SimulationSnapshot | null) => void;
   setSelectedScenarioId: (id: string) => void;
@@ -50,6 +56,9 @@ interface SimulationStoreState {
 }
 
 export const useSimulationStore = create<SimulationStoreState>((set) => ({
+  isAuthenticated: false,
+  operatorName: 'Kal',
+
   status: SimulationStatus.PENDING,
   snapshot: null,
   selectedScenarioId: 'normal',
@@ -66,6 +75,9 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   activeRegionId: null,
   timeSeriesData: [],
   notificationCount: 3,
+
+  login: (name = 'Kal') => set({ isAuthenticated: true, operatorName: name }),
+  logout: () => set({ isAuthenticated: false }),
 
   setStatus: (status) => set({ status }),
   setSnapshot: (snapshot) => {

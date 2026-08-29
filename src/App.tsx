@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSimulation } from './hooks/useSimulation';
 import { useSimulationStore } from './stores';
+import { LoginPortal } from './components/auth/LoginPortal';
 import { Header } from './components/layout/Header';
 import { ControlPanel } from './components/simulation/ControlPanel';
 import { MapView } from './components/simulation/MapView';
@@ -31,7 +32,7 @@ export function App() {
     clearIncidents,
   } = useSimulation();
 
-  const { viewMode, setViewMode } = useSimulationStore();
+  const { viewMode, setViewMode, isAuthenticated } = useSimulationStore();
 
   const [isBenchmarkOpen, setIsBenchmarkOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -45,8 +46,13 @@ export function App() {
     }
   };
 
+  // If not authenticated, render Mission Control Login Portal with "Welcome Operator" animation sequence
+  if (!isAuthenticated) {
+    return <LoginPortal onLoginSuccess={() => {}} />;
+  }
+
   return (
-    <div className="bg-background text-on-surface h-screen w-screen overflow-hidden flex flex-col font-body-md text-body-md select-none">
+    <div className="bg-background text-on-surface h-screen w-screen overflow-hidden flex flex-col font-body-md text-body-md select-none animate-fadeIn">
       {/* Top Navigation Bar */}
       <Header
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -77,7 +83,7 @@ export function App() {
 
         {/* Center Main Area: Viewport + Bottom Telemetry Metrics */}
         <main className="flex-1 relative flex flex-col min-w-0 bg-background z-0 overflow-hidden">
-          {/* Viewport Layers (Regional Map vs Local Simulation) */}
+          {/* Viewport Layers (Adama City Map vs Local Simulation) */}
           <div className="flex-1 relative w-full h-full overflow-hidden">
             {viewMode === 'map' ? (
               <div className="view-layer absolute inset-0 w-full h-full">
