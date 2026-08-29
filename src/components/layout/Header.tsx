@@ -17,7 +17,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenIncidents 
     activeTab, 
     setActiveTab, 
     notificationCount,
-    operatorName,
+    operatorId,
+    operatorClearance,
     logout,
   } = useSimulationStore();
 
@@ -149,19 +150,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenIncidents 
         <div className="relative">
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant overflow-hidden ml-sm ring-1 ring-primary/40 hover:ring-primary transition-all flex items-center justify-center cursor-pointer"
-            title={`Logged in as ${operatorName}`}
+            className="h-8 px-2 rounded-full bg-surface-variant border border-outline-variant overflow-hidden ml-sm ring-1 ring-primary/40 hover:ring-primary transition-all flex items-center gap-1.5 cursor-pointer font-mono"
+            title={`Operator ID: #${operatorId}`}
           >
-            <div className="w-full h-full bg-gradient-to-tr from-[#003640] via-[#06b6d4] to-[#4cd7f6] flex items-center justify-center text-on-primary font-label-caps text-[10px]">
+            <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#003640] via-[#06b6d4] to-[#4cd7f6] flex items-center justify-center text-on-primary font-label-caps text-[9px] font-bold">
               OP
             </div>
+            <span className="text-[11px] text-primary font-bold pr-1">#{operatorId}</span>
           </button>
 
           {isProfileOpen && (
-            <div className="absolute right-0 top-11 w-56 bg-surface-container-high border border-outline-variant rounded-md shadow-2xl p-sm z-50 animate-fadeIn font-data-sm">
+            <div className="absolute right-0 top-11 w-64 bg-surface-container-high border border-outline-variant rounded-md shadow-2xl p-sm z-50 animate-fadeIn font-data-sm">
               <div className="p-2 border-b border-outline-variant/60">
-                <div className="font-bold text-on-surface font-mono">{operatorName}</div>
-                <div className="text-[11px] text-tertiary font-mono">Adama Dispatch Chief</div>
+                <div className="font-bold text-on-surface font-mono flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  OPERATOR #{operatorId}
+                </div>
+                <div className="text-[11px] text-tertiary font-mono mt-0.5">{operatorClearance}</div>
+                <div className="text-[10px] text-on-surface-variant font-mono mt-1">Station: TERM-ADAMA-01</div>
               </div>
               <div className="py-1">
                 <button

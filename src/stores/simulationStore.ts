@@ -10,10 +10,19 @@ export interface TelemetryPoint {
   vehicles: number;
 }
 
+export interface OperatorLocation {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  source: 'gps' | 'simulated';
+}
+
 interface SimulationStoreState {
-  // Auth State
+  // Auth & Operator State
   isAuthenticated: boolean;
-  operatorName: string;
+  operatorId: string;
+  operatorClearance: string;
+  operatorLocation: OperatorLocation | null;
 
   status: SimulationStatus;
   snapshot: SimulationSnapshot | null;
@@ -25,6 +34,7 @@ interface SimulationStoreState {
   
   // Dashboard & Navigation State
   viewMode: 'map' | 'simulation';
+  mapLayerType: 'dark' | 'satellite' | 'hybrid';
   activeTab: 'controls' | 'network' | 'algorithms' | 'incidents';
   selectedAlgorithm: 'dijkstra' | 'astar' | 'dynamic_hld';
   simSpeed: number;
@@ -34,8 +44,10 @@ interface SimulationStoreState {
   notificationCount: number;
 
   // Actions
-  login: (name?: string) => void;
+  login: (id?: string) => void;
   logout: () => void;
+  setOperatorLocation: (loc: OperatorLocation | null) => void;
+  setMapLayerType: (layer: 'dark' | 'satellite' | 'hybrid') => void;
   setStatus: (status: SimulationStatus) => void;
   setSnapshot: (snapshot: SimulationSnapshot | null) => void;
   setSelectedScenarioId: (id: string) => void;
@@ -57,7 +69,9 @@ interface SimulationStoreState {
 
 export const useSimulationStore = create<SimulationStoreState>((set) => ({
   isAuthenticated: false,
-  operatorName: 'Kal',
+  operatorId: 'RX-8842',
+  operatorClearance: 'LEVEL-4 TACTICAL CHIEF',
+  operatorLocation: null,
 
   status: SimulationStatus.PENDING,
   snapshot: null,
@@ -68,6 +82,7 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   selectedRoadId: null,
 
   viewMode: 'map',
+  mapLayerType: 'dark',
   activeTab: 'controls',
   selectedAlgorithm: 'astar',
   simSpeed: 1,
@@ -76,8 +91,10 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   timeSeriesData: [],
   notificationCount: 3,
 
-  login: (name = 'Kal') => set({ isAuthenticated: true, operatorName: name }),
+  login: (id = 'RX-8842') => set({ isAuthenticated: true, operatorId: id }),
   logout: () => set({ isAuthenticated: false }),
+  setOperatorLocation: (operatorLocation) => set({ operatorLocation }),
+  setMapLayerType: (mapLayerType) => set({ mapLayerType }),
 
   setStatus: (status) => set({ status }),
   setSnapshot: (snapshot) => {

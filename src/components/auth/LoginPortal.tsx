@@ -7,7 +7,7 @@ interface LoginPortalProps {
 
 export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
   const { login } = useSimulationStore();
-  const [operatorId, setOperatorId] = useState('operator@routex.et');
+  const [operatorId, setOperatorId] = useState('RX-8842');
   const [password, setPassword] = useState('routex-adama-2026');
   const [stationId] = useState('TERM-ADAMA-01');
   const [isBooting, setIsBooting] = useState(false);
@@ -15,7 +15,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
   const [progress, setProgress] = useState(0);
 
   const handleFillDemo = () => {
-    setOperatorId('operator@routex.et');
+    setOperatorId('RX-8842');
     setPassword('routex-adama-2026');
   };
 
@@ -43,7 +43,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
     const timer3 = setTimeout(() => setBootStep(3), 1100);
     const timer4 = setTimeout(() => setBootStep(4), 1600);
     const timer5 = setTimeout(() => {
-      login('Operator Kal');
+      login(operatorId || 'RX-8842');
       onLoginSuccess();
     }, 2400);
 
@@ -55,7 +55,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
       clearTimeout(timer4);
       clearTimeout(timer5);
     };
-  }, [isBooting, login, onLoginSuccess]);
+  }, [isBooting, operatorId, login, onLoginSuccess]);
 
   return (
     <div className="relative w-screen h-screen bg-[#0d0e15] overflow-hidden flex items-center justify-center select-none font-body-md text-on-surface">
@@ -80,8 +80,8 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
             AUTHENTICATING ACCESS CLEARANCE
           </div>
 
-          <h1 className="font-display text-[32px] md:text-[40px] text-on-surface font-bold tracking-tight text-glow-cyan">
-            WELCOME, OPERATOR KAL
+          <h1 className="font-display text-[32px] md:text-[38px] text-on-surface font-bold tracking-tight text-glow-cyan font-mono">
+            WELCOME, OPERATOR #{operatorId.toUpperCase()}
           </h1>
 
           <div className="font-data-md text-data-md text-tertiary font-mono mt-1">
@@ -143,7 +143,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleAuthorize} className="space-y-md">
             <div>
               <label className="font-label-caps text-label-caps text-on-surface-variant block mb-1.5">
-                OPERATOR IDENTIFIER / EMAIL
+                OPERATOR BADGE ID / IDENTIFIER
               </label>
               <div className="relative">
                 <input
@@ -152,7 +152,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
                   onChange={(e) => setOperatorId(e.target.value)}
                   required
                   className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-mono text-body-md rounded p-sm pl-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  placeholder="operator@routex.et"
+                  placeholder="RX-8842"
                 />
                 <span className="material-symbols-outlined text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 text-[18px]">
                   badge
@@ -217,7 +217,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
             <div className="grid grid-cols-2 gap-2 text-xs font-mono text-on-surface-variant">
               <div>
                 <span className="text-on-surface-variant/70">Operator ID:</span>{' '}
-                <strong className="text-on-surface">operator@routex.et</strong>
+                <strong className="text-on-surface">RX-8842</strong>
               </div>
               <div>
                 <span className="text-on-surface-variant/70">Access Key:</span>{' '}
