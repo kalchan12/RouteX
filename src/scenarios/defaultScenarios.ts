@@ -89,7 +89,7 @@ const normal = (): ScenarioConfig => {
   const cols = 8, rows = 6, block = 500;
   return {
     id: 'normal',
-    name: 'Normal Traffic',
+    name: 'ASTU & City Center Corridor',
     duration: 600,
     network: buildGridNetwork(cols, rows, block),
     trafficLights: buildTrafficLights(cols, rows, 15, 15),
@@ -105,7 +105,7 @@ const rushHour = (): ScenarioConfig => {
   const cols = 8, rows = 6, block = 500;
   return {
     id: 'rush_hour',
-    name: 'Rush Hour',
+    name: 'Expressway Toll Gate Ingress',
     duration: 600,
     network: buildGridNetwork(cols, rows, block),
     trafficLights: buildTrafficLights(cols, rows, 12, 20),
@@ -122,7 +122,7 @@ const accident = (): ScenarioConfig => {
   const network = buildGridNetwork(cols, rows, block);
   return {
     id: 'accident',
-    name: 'Accident Scenario',
+    name: 'Posta Bet Roundabout Incident',
     duration: 600,
     network,
     trafficLights: buildTrafficLights(cols, rows, 15, 15),
@@ -142,7 +142,7 @@ const accident = (): ScenarioConfig => {
       roadId: 'e_7',
       nodeId: null,
       position: null,
-      description: 'Vehicle collision blocking lane',
+      description: 'Collision at Posta Bet inner ring',
       affectedLanes: [0],
       estimatedClearanceTick: 300,
     }] as Omit<Incident, 'id' | 'startTick' | 'endTick'>[],
@@ -157,7 +157,7 @@ const emergency = (): ScenarioConfig => {
   const network = buildGridNetwork(cols, rows, block);
   return {
     id: 'emergency',
-    name: 'Emergency Vehicle',
+    name: 'Adama General Hospital Priority',
     duration: 600,
     network,
     trafficLights: buildTrafficLights(cols, rows, 15, 15),
@@ -191,7 +191,7 @@ const roadClosure = (): ScenarioConfig => {
   const network = buildGridNetwork(cols, rows, block);
   return {
     id: 'road_closure',
-    name: 'Road Closure',
+    name: 'Wonji Freight Road Closure',
     duration: 600,
     network,
     trafficLights: buildTrafficLights(cols, rows, 15, 15),
@@ -211,7 +211,7 @@ const roadClosure = (): ScenarioConfig => {
       roadId: 'e_5',
       nodeId: null,
       position: null,
-      description: 'Road closed for maintenance',
+      description: 'Wonji industrial sector bridge overhaul',
       affectedLanes: [0, 1],
       estimatedClearanceTick: 400,
     }] as Omit<Incident, 'id' | 'startTick' | 'endTick'>[],

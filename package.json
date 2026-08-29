@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@pixi/react": "^8.0.5",
+    "@types/leaflet": "^1.9.22",
     "clsx": "^2.1.1",
     "dexie": "^4.4.5",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.33.0",
     "pixi.js": "^8.20.0",
     "react": "^18.2.0",
