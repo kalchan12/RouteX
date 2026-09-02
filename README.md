@@ -25,7 +25,7 @@ measurable metrics. Every simulation is **deterministic and reproducible**.
       │             │        │
       └─────────────┼────────┘
                     ▼
-              PixiJS Renderer
+              Three.js Renderer
                     │
                     ▼
            Browser Visualization
@@ -53,8 +53,7 @@ measurable metrics. Every simulation is **deterministic and reproducible**.
 - **Analytics & metrics** — travel time, congestion, speed, throughput, waiting
   time, emergency response, algorithm runtime; in-memory time series for charts.
 - **Benchmarking** — headless algorithm comparison with real, computed results.
-- **Live visualization** — PixiJS canvas rendering roads, vehicles, congestion,
-  and selected routes, running in a Web Worker for smooth 60fps UI.
+- **Live visualization** — Three.js canvas rendering roads, vehicles, buildings, pedestrians, and traffic lights with continuous simulation physics.
 - **Local-first persistence** — Dexie.js + IndexedDB for saving networks,
   scenarios, and benchmark results.
 
@@ -80,7 +79,7 @@ Browser
   │     ├── Optimization (route optimizer, signal optimizer)
   │     └── Analytics (metrics, benchmarks)
   │
-  ├── PixiJS (rendering in Web Worker)
+  ├── Three.js (3D rendering)
   │
   └── Dexie.js → IndexedDB (persistence)
 ```
@@ -94,11 +93,11 @@ the UI — enabling automated testing, benchmarking and reproducible experiments
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | React, TypeScript, Vite, PixiJS |
+| Frontend | React, TypeScript, Vite, Three.js |
 | State | Zustand |
 | Persistence | Dexie.js, IndexedDB |
 | Routing | Custom Dijkstra & A* |
-| Visualization | PixiJS (Web Worker) |
+| Visualization | Three.js (3D rendering) |
 | Testing | Vitest (unit), Playwright (E2E) |
 | Styling | Tailwind CSS |
 | Validation | Zod |
@@ -120,7 +119,7 @@ routex/
 │   │   └── analytics/    # Metrics tracker, time series
 │   │
 │   ├── rendering/
-│   │   └── pixi/         # PixiJS renderers
+│   │   └── three/        # Three.js renderers
 │   │
 │   ├── stores/           # Zustand stores
 │   ├── db/               # Dexie/IndexedDB schema

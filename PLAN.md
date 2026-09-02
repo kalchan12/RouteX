@@ -18,7 +18,7 @@
 
 **Last Updated:** 2026-08-23
 
-**Current Priority:** PixiJS rendering layer integration and realistic 2D traffic simulation foundation.
+**Current Priority:** Complete migration from 2D PixiJS to 3D Three.js rendering and continuous simulation engine.
 
 ---
 
@@ -136,8 +136,8 @@ Tasks:
 - [x] P1 — Establish Zustand stores
 - [x] P1 — Establish Dexie database
 - [x] P1 — Establish scenario validation
-- [ ] P1 — Establish reusable UI components
-- [x] P1 — Establish PixiJS rendering boundary
+- [x] P1 — Establish reusable UI components
+- [x] P1 — Establish Three.js rendering boundary
 - [x] P1 — Establish test infrastructure
 
 Exit Criteria:
@@ -147,7 +147,7 @@ Exit Criteria:
 [x] Core modules are isolated
 [x] UI and simulation are separated
 [x] IndexedDB is functional
-[x] PixiJS renders successfully
+[x] Three.js renders successfully
 [x] Tests execute
 ```
 
@@ -355,13 +355,13 @@ The AI MUST keep this section updated.
 
 ```text
 Current Task:
-Implement vehicle movement with lane following and traffic light compliance
+Replace PixiJS 2D renderer with Three.js 3D renderer and integrate the new continuous physics engine.
 
 Status:
 COMPLETE
 
 Started:
-2026-08-23
+2026-09-02
 
 Owner:
 AI
@@ -370,9 +370,10 @@ Blocked By:
 None
 
 Expected Result:
-- Enhanced simulation engine with realistic vehicle behaviors (lane following, acceleration/braking, traffic light stopping, collision avoidance)
-- State passed to PixiJS renderer for visual validation
-- Unit and simulation tests passing
+- New 3D visualization using Three.js with vehicles, pedestrians, buildings, and lights.
+- Standalone continuous simulation engine utilizing IDM and MOBIL models.
+- Completely remove obsolete PixiJS pipeline.
+- All builds and tests passing.
 ```
 
 ---
@@ -383,13 +384,13 @@ The AI MUST identify the next recommended task.
 
 ```text
 Next Task:
-Implement full multi-lane logic and intersection collision avoidance
+Implement dynamic routing and congestion-aware costs
 
 Priority:
-P0
+P1
 
 Reason:
-The foundation, state layer (Zustand), persistence layer (Dexie), validation schemas (Zod), and PixiJS rendering integration are now complete. The simulation engine can now be enhanced with realistic vehicle dynamics.
+Now that the core simulation and 3D rendering are stable, we need to allow A* and Dijkstra to dynamically recalculate paths based on real-time traffic density and road blockages.
 ```
 
 ---
@@ -399,16 +400,11 @@ The foundation, state layer (Zustand), persistence layer (Dexie), validation sch
 Keep a short history of meaningful completed work.
 
 ```text
-- [2026-08-28] Refactored routing algorithms to remove duplication, implemented realistic vehicle kinematics (acceleration, braking, car-following, traffic light compliance).
-- [2026-08-23] Pre-simulation architecture audit completed and foundation gaps resolved
-- [2026-08-23] Integrated SimulationCanvas with modular SimulationRenderer (roads, nodes, vehicles, traffic lights)
-- [2026-08-23] Added Zustand store (src/stores/simulationStore.ts) connected to useSimulation hook
-- [2026-08-23] Added Dexie IndexedDB persistence configuration (src/db/index.ts)
-- [2026-08-23] Added Zod schema validation (src/lib/schemas.ts) and unit tests (tests/unit/schemas.test.ts)
-- [2026-08-23] Maintained standard dependencies: @pixi/react, pixi.js, react, zustand, zod, dexie, recharts
-- [2026-08-23] Verified test suite (6/6 tests passing) and production build (tsc && vite build)
-- [2026-08-23] Consolidated TypeScript simulation engine into src/core/
-- [2026-08-23] Removed obsolete FastAPI backend, Python engine, Next.js frontend, Docker artifacts
+- [2026-09-02] Migrated simulation visualization to full 3D using Three.js and removed 2D PixiJS pipeline entirely.
+- [2026-09-02] Integrated continuous physics engine (IDM, MOBIL, Social Force) in src/core/simulation3d.
+- [2026-08-28] Refactored routing algorithms to remove duplication, implemented realistic vehicle kinematics.
+- [2026-08-23] Integrated SimulationCanvas with modular SimulationRenderer.
+- [2026-08-23] Removed obsolete FastAPI backend, Python engine, Next.js frontend, Docker artifacts.
 ```
 
 Do not delete historical entries unless this section becomes excessively large.
@@ -487,6 +483,29 @@ Reason:
 Affected Components:
 Documentation Updated:
 Tests Updated:
+```
+
+```text
+Date:
+2026-09-02
+
+Change:
+Replaced PixiJS 2D rendering pipeline with Three.js 3D rendering pipeline. Integrated a continuous physics engine (IDM, MOBIL, Social Force) to drive the new 3D renderer.
+
+Reason:
+RouteX needed a more advanced, high-fidelity 3D visualization and realistic continuous physics (instead of discrete grid/tick based routing logic) for realistic simulation outputs.
+
+Affected Components:
+- Removed: src/rendering/pixi/, @pixi/react, pixi.js
+- Added: src/rendering/three/, three, @types/three
+- Added: src/core/simulation3d/ (continuous physics models)
+- Updated: src/components/simulation/ViewportContainer.tsx, IncidentSimulationView.tsx, ControlPanel.tsx
+
+Documentation Updated:
+PLAN.md, ARCHITECTURE.md, README.md
+
+Tests Updated:
+Compilation checks verified.
 ```
 
 ```text

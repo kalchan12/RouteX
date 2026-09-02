@@ -27,7 +27,7 @@ There is no required traditional backend.
 | Build Tool | Vite |
 | Styling | Tailwind CSS |
 | UI Components | shadcn/ui |
-| Simulation Rendering | PixiJS |
+| Simulation Rendering | Three.js |
 | State Management | Zustand |
 | Validation | Zod |
 | Local Database | IndexedDB |
@@ -58,7 +58,7 @@ Browser
 │   ├── Optimization
 │   └── Analytics
 │
-├── PixiJS Renderer
+├── Three.js Renderer
 │
 └── Dexie
     │
@@ -105,14 +105,12 @@ Ideally, the simulation can be tested without rendering the UI.
 
 ## Rendering
 
-PixiJS is responsible for visualizing:
+Three.js is responsible for visualizing:
 
 - Roads
-- Vehicles
+- Vehicles (cars, trucks, buses)
 - Traffic lights
-- Routes
-- Incidents
-- Congestion
+- Buildings, trees, sidewalks
 - Pedestrians
 
 Rendering code must not implement business logic.
@@ -121,16 +119,12 @@ The rendering layer is organized as:
 
 ```text
 src/rendering/
-└── pixi/
-    ├── simulationRenderer.ts  # Main orchestrator
-    ├── roadRenderer.ts        # Road network visualization
-    ├── nodeRenderer.ts        # Intersection/node visualization
-    ├── vehicleRenderer.ts     # Vehicle rendering with interpolation
-    ├── trafficLightRenderer.ts # Traffic light state visualization
-    └── types.ts               # Shared rendering types
+└── three/
+    ├── Renderer3D.ts        # Main Three.js renderer
+    └── index.ts             # Exports
 ```
 
-Each renderer is a focused class that consumes simulation state and produces visual output. The SimulationRenderer orchestrates all sub-renderers and handles viewport/camera interactions (zoom, pan).
+The renderer is a focused class that consumes simulation state from `simulation3d/SimulationEngine` and produces 3D visual output, handling lighting, shadows, and camera controls.
 
 ---
 
