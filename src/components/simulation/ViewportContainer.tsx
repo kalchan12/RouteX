@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSimulationStore } from '../../stores';
 import { MapView } from './MapView';
-import { SimulationCanvas } from './SimulationCanvas';
+import { Simulation3DView } from './Simulation3DView';
 import { IncidentSimulationView } from './IncidentSimulationView';
 import { useSimulation } from '../../hooks/useSimulation';
 
@@ -33,10 +33,7 @@ export const ViewportContainer: React.FC = () => {
         {viewMode === 'map' ? (
           <MapView onSelectRegion={handleSelectRegion} />
         ) : (
-          <SimulationCanvas
-            snapshot={snapshot}
-            onBackToRegion={() => setViewMode('map')}
-          />
+          <Simulation3DView />
         )}
       </div>
 

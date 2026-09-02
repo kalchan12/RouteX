@@ -38,7 +38,6 @@ interface SimulationStoreState {
   activeTab: 'controls' | 'network' | 'algorithms' | 'incidents';
   selectedAlgorithm: 'dijkstra' | 'astar' | 'dynamic_hld';
   simSpeed: number;
-  highFidelity3D: boolean;
   activeRegionId: string | null;
   timeSeriesData: TelemetryPoint[];
   notificationCount: number;
@@ -60,7 +59,6 @@ interface SimulationStoreState {
   setActiveTab: (tab: 'controls' | 'network' | 'algorithms' | 'incidents') => void;
   setSelectedAlgorithm: (algo: 'dijkstra' | 'astar' | 'dynamic_hld') => void;
   setSimSpeed: (speed: number) => void;
-  setHighFidelity3D: (enabled: boolean) => void;
   setActiveRegionId: (regionId: string | null) => void;
   addTelemetryPoint: (point: TelemetryPoint) => void;
   clearTimeSeriesData: () => void;
@@ -100,7 +98,6 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   activeTab: 'controls',
   selectedAlgorithm: 'astar',
   simSpeed: 1,
-  highFidelity3D: true,
   activeRegionId: null,
   timeSeriesData: [],
   notificationCount: 3,
@@ -151,7 +148,6 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
   setSelectedAlgorithm: (selectedAlgorithm) => set({ selectedAlgorithm }),
   setSimSpeed: (simSpeed) => set({ simSpeed }),
-  setHighFidelity3D: (highFidelity3D) => set({ highFidelity3D }),
   setActiveRegionId: (activeRegionId) => set({ activeRegionId }),
   addTelemetryPoint: (point) =>
     set((state) => ({ timeSeriesData: [...state.timeSeriesData.slice(-29), point] })),

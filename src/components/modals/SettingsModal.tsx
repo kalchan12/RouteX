@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSimulationStore } from '../../stores';
+
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -7,8 +7,6 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { highFidelity3D, setHighFidelity3D } = useSimulationStore();
-
   if (!isOpen) return null;
 
   return (
@@ -28,18 +26,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </div>
 
         <div className="p-lg space-y-md font-body-md text-on-surface-variant">
-          <div className="flex justify-between items-center py-2 border-b border-outline-variant/40">
-            <div>
-              <div className="text-on-surface font-medium">WebGL Hardware Acceleration</div>
-              <div className="text-xs text-on-surface-variant">Pixi.js high-performance render pipeline</div>
-            </div>
-            <input
-              type="checkbox"
-              checked={highFidelity3D}
-              onChange={(e) => setHighFidelity3D(e.target.checked)}
-              className="accent-primary w-4 h-4 cursor-pointer"
-            />
-          </div>
 
           <div className="flex justify-between items-center py-2 border-b border-outline-variant/40">
             <div>

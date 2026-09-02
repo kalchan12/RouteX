@@ -1,32 +1,21 @@
 import React from 'react';
 import { ActiveIncident, SimulationSnapshot } from '../../types';
 import { useSimulationStore } from '../../stores';
-import { SimulationCanvas } from './SimulationCanvas';
+import { Simulation3DView } from './Simulation3DView';
 
 interface Props {
   incident: ActiveIncident;
   snapshot: SimulationSnapshot | null;
 }
 
-export const IncidentSimulationView: React.FC<Props> = ({ incident, snapshot }) => {
+export const IncidentSimulationView: React.FC<Props> = ({ incident }) => {
   const exitIncidentSimulation = useSimulationStore(state => state.exitIncidentSimulation);
-
-  // Mock mapping: we assume the PIXI canvas is roughly 0..2000 in x/y for the default scenarios.
-  // We can pick a focus point dynamically based on incident ID or just use a fixed point for the demo.
-  const focusCoordinates = React.useMemo(() => {
-    // Just a placeholder mock mapping. In a real app, map lat/lng to network bounds.
-    let x = 1000, y = 1000; 
-    if (incident.id === 'inc-1') { x = 600; y = 600; }
-    else if (incident.id === 'inc-2') { x = 1200; y = 400; }
-    else if (incident.id === 'inc-3') { x = 800; y = 1500; }
-    return { x, y, zoom: 1.8 };
-  }, [incident.id]);
 
   return (
     <div className="w-full h-full bg-background relative flex items-center justify-center overflow-hidden">
       {/* Background Simulation Canvas */}
       <div className="absolute inset-0 z-0 opacity-80 mix-blend-screen pointer-events-none">
-        <SimulationCanvas snapshot={snapshot} focusCoordinates={focusCoordinates} />
+        <Simulation3DView />
       </div>
 
       {/* Incident details modal overlay */}

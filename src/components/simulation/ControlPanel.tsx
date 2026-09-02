@@ -43,8 +43,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     setActiveTab, 
     simSpeed, 
     selectedAlgorithm, 
-    highFidelity3D, 
-    setHighFidelity3D,
     snapshot,
   } = useSimulationStore();
 
@@ -118,34 +116,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-md flex flex-col gap-md">
         {activeTab === 'controls' && (
-          <>
-            {/* Render Settings Toggle */}
-            <div className="bg-surface rounded border border-outline-variant p-md flex justify-between items-center">
-              <div>
-                <span className="font-label-caps text-label-caps text-on-surface-variant block">
-                  HIGH-FIDELITY 3D
-                </span>
-                <span className="font-data-sm text-[11px] text-on-surface-variant/70">
-                  {highFidelity3D ? 'Pixi.js WebGL Enhanced' : 'Standard 2D Mode'}
-                </span>
-              </div>
-              <div
-                onClick={() => setHighFidelity3D(!highFidelity3D)}
-                className={`w-10 h-5 rounded-full relative cursor-pointer flex items-center transition-colors ${
-                  highFidelity3D ? 'bg-primary/40' : 'bg-surface-container-highest'
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full absolute transition-all border border-background ${
-                    highFidelity3D
-                      ? 'right-0.5 bg-primary shadow-[0_0_8px_rgba(76,215,246,0.8)]'
-                      : 'left-0.5 bg-outline'
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* Playback Controls */}
+          <>            {/* Playback Controls */}
             <div className="bg-surface rounded border border-outline-variant p-md">
               <div className="flex justify-between items-center mb-sm">
                 <div className="font-label-caps text-label-caps text-on-surface-variant">PLAYBACK</div>
