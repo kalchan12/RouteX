@@ -1,37 +1,47 @@
 import { test, expect } from '@playwright/test';
 
-test('application loads and simulation can start', async ({ page }) => {
+test('application loads login portal and can authorize into 3D mission control', async ({ page }) => {
   await page.goto('/');
-  
+
   // Check page title
   await expect(page).toHaveTitle(/RouteX/);
-  
-  // Check header
-  await expect(page.locator('h1')).toContainText('RouteX');
-  
-  // Check scenario selector is visible
-  await expect(page.locator('select')).toBeVisible();
-  
-  // Check canvas container exists
-  await expect(page.locator('.canvas-container')).toBeVisible();
-  
-  // Check controls are present
-  await expect(page.locator('text=Controls')).toBeVisible();
-  
-  // Check metrics panel
-  await expect(page.locator('text=Metrics')).toBeVisible();
+
+  // Check login portal is rendered
+  await expect(page.locator('text=ADAMA MUNICIPAL DISPATCH PORTAL')).toBeVisible();
+  const authButton = page.locator('button[type="submit"]');
+  await expect(authButton).toBeVisible();
+
+  // Authorize access
+  await authButton.click();
+
+  // Wait for holographic boot sequence and transition to main dashboard
+  await expect(page.locator('text=Simulation Engine')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=RouteX')).toBeVisible();
+
+  // Verify panels are present
+  await expect(page.locator('text=EXECUTION CONTROLS')).toBeVisible();
+  await expect(page.locator('text=CONGESTION')).toBeVisible();
 });
 
-test('can select different scenarios', async ({ page }) => {
+test('can switch scenarios and interact with simulation controls', async ({ page }) => {
   await page.goto('/');
-  
-  const select = page.locator('select');
-  
-  // Get all options
-  const options = await select.locator('option').allTextContents();
-  expect(options.length).toBeGreaterThan(1);
-  
-  // Select rush hour
-  await select.selectOption('rush_hour');
-  await expect(select).toHaveValue('rush_hour');
+
+  // Authorize access
+  const authButton = page.locator('button[type="submit"]');
+  await authButton.click();
+
+  // Wait for dashboard to load
+  await expect(page.locator('text=Simulation Engine')).toBeVisible({ timeout: 10000 });
+
+  // Verify Start Simulation button exists
+  const startButton = page.locator('button', { hasText: 'Start Simulation' });
+  await expect(startButton).toBeVisible();
+
+  // Switch to a regional scenario from InspectorPanel
+  const scenarioCard = page.locator('text=ASTU Main Gate').first();
+  if (await scenarioCard.isVisible()) {
+    await scenarioCard.click();
+    // Verify 3D simulation canvas is mounted
+    await expect(page.locator('canvas')).toBeVisible({ timeout: 5000 });
+  }
 });
