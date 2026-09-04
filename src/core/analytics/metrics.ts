@@ -1,4 +1,4 @@
-import { SimulationSnapshot } from '../simulation/state';
+import { SimulationSnapshot } from '../../types';
 
 export interface TimeSeriesPoint {
   tick: number;

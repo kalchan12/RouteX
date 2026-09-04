@@ -12,6 +12,13 @@ export interface Vec2 {
 
 // ─── Vehicle ───────────────────────────────────────────────
 
+export enum VehicleType {
+  Car       = 'car',
+  Truck     = 'truck',
+  Bus       = 'bus',
+  Emergency = 'emergency',
+}
+
 export interface VehicleState {
   id: string;
   /** 1D position along lane center-line (m from lane start) */
@@ -34,12 +41,6 @@ export interface VehicleState {
   /** Snapshot for render interpolation */
   prevPosition: number;
   prevSpeed: number;
-}
-
-export enum VehicleType {
-  Car   = 'car',
-  Truck = 'truck',
-  Bus   = 'bus',
 }
 
 export interface IDMParams {
@@ -132,13 +133,49 @@ export interface Scenario {
   seed: number;
 }
 
-// ─── Simulation state (for UI) ─────────────────────────────
+// ─── Simulation state & Telemetry (for UI & Inspectors) ──────
+
+export interface VehicleSnapshot {
+  id: string;
+  type: VehicleType;
+  position: number;
+  speed: number;
+  desiredSpeed: number;
+  maxSpeed?: number;
+  acceleration: number;
+  laneId: string;
+  roadId: string;
+  length: number;
+  width: number;
+  color: string;
+  origin?: string;
+  destination?: string;
+  state?: string;
+  progress?: number;
+}
+
+export interface SimulationMetrics {
+  totalThroughput: number;
+  avgSpeed: number;
+  avgTravelTime: number;
+  avgCongestion: number;
+  totalWaitingTime: number;
+  emergencyResponseTime?: number | null;
+}
 
 export interface SimulationSnapshot {
-  vehicleCount: number;
-  avgSpeed: number;
+  tick: number;
   simTime: number;
+  status: string;
   isRunning: boolean;
+  vehicleCount: number;
+  vehicles: VehicleSnapshot[];
+  metrics: SimulationMetrics;
+  network?: {
+    nodes: Array<{ id: string; x: number; y: number; type?: string }>;
+    edges: Array<{ id: string; source: string; destination: string; lanes?: number; speedLimit?: number }>;
+  };
+  blockedLanes?: string[];
 }
 
 // ─── Pedestrians ───────────────────────────────────────────

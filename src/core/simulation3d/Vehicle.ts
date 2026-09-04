@@ -6,7 +6,7 @@
 
 import type { VehicleState, IDMParams } from './types';
 import { VehicleType } from './types';
-import { CAR_PARAMS, TRUCK_PARAMS, BUS_PARAMS } from './IDM';
+import { CAR_PARAMS, TRUCK_PARAMS, BUS_PARAMS, EMERGENCY_PARAMS } from './IDM';
 
 let nextId = 0;
 export function resetIds(): void { nextId = 0; }
@@ -18,11 +18,14 @@ const VISUALS: Record<VehicleType, { len: number; wid: number; colors: string[] 
     colors: ['#64748b','#78716c','#6b7280'] },
   [VehicleType.Bus]:   { len: 11.0, wid: 2.5,
     colors: ['#eab308','#f97316'] },
+  [VehicleType.Emergency]: { len: 5.2, wid: 2.1,
+    colors: ['#ef4444','#dc2626'] },
 };
 
 function baseParams(t: VehicleType): IDMParams {
   if (t === VehicleType.Truck) return TRUCK_PARAMS;
   if (t === VehicleType.Bus)   return BUS_PARAMS;
+  if (t === VehicleType.Emergency) return EMERGENCY_PARAMS;
   return CAR_PARAMS;
 }
 

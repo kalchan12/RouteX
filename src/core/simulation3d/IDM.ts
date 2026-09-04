@@ -41,6 +41,15 @@ export const BUS_PARAMS: IDMParams = {
   delta:        4,
 };
 
+export const EMERGENCY_PARAMS: IDMParams = {
+  desiredSpeed: 20.0,    // ≈72 km/h (emergency rush)
+  maxAccel:     2.8,
+  comfortDecel: 3.5,
+  minGap:       1.5,
+  timeHeadway:  1.0,
+  delta:        4,
+};
+
 // ─── Core IDM function ─────────────────────────────────────
 
 /**

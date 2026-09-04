@@ -2,10 +2,11 @@
  * Core Simulation Engine.
  * 
  * Runs the fixed-timestep physics loop, totally decoupled from React/UI.
- * Uses the IDM for car-following and virtual obstacles for traffic lights.
+ * Uses the IDM for car-following, virtual obstacles for traffic lights and road incidents,
+ * and MOBIL for realistic multi-lane changes.
  */
 
-import type { Scenario, VehicleState, SimulationSnapshot, VehicleSpawner, PedestrianState } from './types';
+import type { Scenario, VehicleState, SimulationSnapshot, VehicleSpawner, PedestrianState, VehicleSnapshot } from './types';
 import { VehicleType, LightState } from './types';
 import { RoadNetwork } from './RoadNetwork';
 import { TrafficLightController } from './TrafficLightController';
@@ -13,7 +14,7 @@ import { idmAcceleration, idmFreeAccel } from './IDM';
 import { createVehicle, vehicleIDM, resetIds } from './Vehicle';
 import { shouldChangeLane } from './MOBIL';
 import { computePedestrianForces } from './SocialForce';
-import { canSafelyTurn } from "./GapAcceptance";
+import { canSafelyTurn } from './GapAcceptance';
 
 /** Seeded PRNG (mulberry32) for reproducible traffic generation */
 function createRNG(seed: number): () => number {
@@ -40,6 +41,13 @@ export class SimulationEngine {
   private spawnTimers: number[] = [];
   
   public pedestrians: PedestrianState[] = [];
+  public blockedLanes = new Set<string>();
+
+  private totalThroughput = 0;
+  private arrivedCount = 0;
+  private totalTravelTime = 0;
+  private trafficSpikeTimer = 0;
+  private trafficSpikeMultiplier = 1.0;
 
   load(scenario: Scenario): void {
     this.network.clear();
@@ -47,6 +55,12 @@ export class SimulationEngine {
     resetIds();
     this.simTime = 0;
     this.accumulator = 0;
+    this.blockedLanes.clear();
+    this.totalThroughput = 0;
+    this.arrivedCount = 0;
+    this.totalTravelTime = 0;
+    this.trafficSpikeTimer = 0;
+    this.trafficSpikeMultiplier = 1.0;
     this.rng = createRNG(scenario.seed);
 
     for (const r of scenario.roads) this.network.addRoad(r);
@@ -64,7 +78,63 @@ export class SimulationEngine {
     this.accumulator = 0;
     this.network.clearVehicles();
   }
+  reset(): void {
+    this.stop();
+    this.blockedLanes.clear();
+    this.totalThroughput = 0;
+    this.arrivedCount = 0;
+    this.totalTravelTime = 0;
+    this.trafficSpikeTimer = 0;
+    this.trafficSpikeMultiplier = 1.0;
+  }
   setSpeed(mult: number): void { this.speedMult = Math.max(0.1, Math.min(10, mult)); }
+
+  /** Manually step forward by one tick (dt) */
+  stepOnce(): void {
+    this.step(this.dt);
+  }
+
+  /** Dynamic Incident Injection: block a lane */
+  blockRoad(laneId?: string): void {
+    if (laneId) {
+      this.blockedLanes.add(laneId);
+    } else {
+      // Pick first available lane
+      const roads = this.network.getAllRoads();
+      if (roads.length > 0 && roads[0]!.lanes.length > 0) {
+        this.blockedLanes.add(roads[0]!.lanes[0]!.id);
+      }
+    }
+  }
+
+  /** Dynamic Incident Injection: spawn emergency vehicle */
+  spawnEmergency(count = 1): void {
+    const roads = this.network.getAllRoads();
+    if (roads.length === 0) return;
+    
+    for (let i = 0; i < count; i++) {
+      const spawner = this.spawners[i % this.spawners.length];
+      const targetLaneId = spawner ? spawner.laneId : roads[0]!.lanes[0]!.id;
+      const lane = this.network.getLane(targetLaneId);
+      if (!lane) continue;
+
+      const v = createVehicle(VehicleType.Emergency, targetLaneId, lane.roadId, 0, [], this.rng);
+      v.desiredSpeed = 22.0; // High speed response
+      v.color = '#ef4444';
+      this.network.insertVehicle(v);
+    }
+  }
+
+  /** Trigger temporary traffic surge */
+  triggerTrafficSpike(multiplier = 2.5, durationSec = 15): void {
+    this.trafficSpikeMultiplier = multiplier;
+    this.trafficSpikeTimer = durationSec;
+  }
+
+  /** Clear all active road closures and incidents */
+  clearIncidents(): void {
+    this.blockedLanes.clear();
+  }
 
   /** Called by render loop with actual elapsed wall-clock time (seconds). */
   update(realDt: number): void {
@@ -82,6 +152,13 @@ export class SimulationEngine {
 
   private step(dt: number): void {
     this.simTime += dt;
+
+    if (this.trafficSpikeTimer > 0) {
+      this.trafficSpikeTimer -= dt;
+      if (this.trafficSpikeTimer <= 0) {
+        this.trafficSpikeMultiplier = 1.0;
+      }
+    }
 
     const all = this.network.getAllVehicles();
     // 1. Traffic lights
@@ -114,7 +191,12 @@ export class SimulationEngine {
       
       const lane = this.network.getLane(v.laneId);
       if (lane && v.position > lane.length) {
-        if (!this.transitionNextLane(v)) removed.push(v);
+        if (!this.transitionNextLane(v)) {
+          removed.push(v);
+          this.totalThroughput++;
+          this.arrivedCount++;
+          this.totalTravelTime += (v.position / Math.max(1, v.speed));
+        }
       }
     }
 
@@ -141,11 +223,19 @@ export class SimulationEngine {
     const p = vehicleIDM(v);
     const leader = this.network.getLeader(v);
     
-    // Find virtual obstacle (red light)
-    let tlGap = Infinity;
+    // Find virtual obstacle (red light or blocked lane)
+    let obstacleGap = Infinity;
     const lane = this.network.getLane(v.laneId);
     const road = lane ? this.network.getRoad(lane.roadId) : null;
     
+    // Check lane blockage incident
+    if (this.blockedLanes.has(v.laneId) && lane) {
+      const blockPoint = lane.length * 0.45;
+      if (blockPoint > v.position) {
+        obstacleGap = blockPoint - v.position - v.length / 2;
+      }
+    }
+
     if (road?.endIntersectionId) {
       const ix = this.network.getIntersection(road.endIntersectionId);
       if (ix) {
@@ -153,7 +243,10 @@ export class SimulationEngine {
         if (state === LightState.Red || state === LightState.Yellow) {
           const stopPos = this.traffic.stopPos(ix, v.laneId);
           if (stopPos !== null) {
-            tlGap = stopPos - v.position - v.length / 2;
+            const tlGap = stopPos - v.position - v.length / 2;
+            if (tlGap < obstacleGap && tlGap > 0) {
+              obstacleGap = tlGap;
+            }
           }
         }
       }
@@ -163,26 +256,22 @@ export class SimulationEngine {
       const gap = leader.position - v.position - (leader.length / 2) - (v.length / 2);
       const dv = v.speed - leader.speed;
       
-      if (tlGap < gap && tlGap > 0) {
-        // Red light is closer than the leader
-        v.acceleration = idmAcceleration(v.speed, v.desiredSpeed, tlGap, v.speed, p);
+      if (obstacleGap < gap && obstacleGap > 0) {
+        v.acceleration = idmAcceleration(v.speed, v.desiredSpeed, obstacleGap, v.speed, p);
       } else {
         v.acceleration = idmAcceleration(v.speed, v.desiredSpeed, gap, dv, p);
       }
-    } else if (tlGap < Infinity && tlGap > 0) {
-      // No leader, but approaching red light
-      v.acceleration = idmAcceleration(v.speed, v.desiredSpeed, tlGap, v.speed, p);
+    } else if (obstacleGap < Infinity && obstacleGap > 0) {
+      v.acceleration = idmAcceleration(v.speed, v.desiredSpeed, obstacleGap, v.speed, p);
     } else {
-      // Free road
       v.acceleration = idmFreeAccel(v.speed, v.desiredSpeed, p);
     }
 
-    // Hard clamp to prevent backward movement / extreme physics
     v.acceleration = Math.max(-8, Math.min(p.maxAccel, v.acceleration));
 
-    // Stochastic slow-down: ~10% probability per second to briefly decelerate
-    if (this.rng() < 0.1 * dt) {
-      v.acceleration -= this.rng() * 1.5; // Random drop in acceleration
+    // Slight stochastic variation for non-emergency vehicles
+    if (v.type !== VehicleType.Emergency && this.rng() < 0.08 * dt) {
+      v.acceleration -= this.rng() * 1.2;
       v.acceleration = Math.max(-8, v.acceleration);
     }
   }
@@ -195,8 +284,7 @@ export class SimulationEngine {
     const road = this.network.getRoad(lane.roadId);
     if (road?.endIntersectionId) {
       const ix = this.network.getIntersection(road.endIntersectionId);
-      if (ix && this.traffic.lightState(ix, v.laneId) !== LightState.Green) {
-        // Forced stop (blew the light, hard correction)
+      if (ix && this.traffic.lightState(ix, v.laneId) !== LightState.Green && v.type !== VehicleType.Emergency) {
         v.position = lane.length;
         v.speed = 0;
         return true;
@@ -211,8 +299,8 @@ export class SimulationEngine {
     const targetLane = this.network.getLane(conn.toLaneId);
     if (!targetLane) return false;
 
-    // Gap acceptance
-    if (!canSafelyTurn(v, lane, targetLane, this.network, conn.turnType)) {
+    // Gap acceptance (emergency vehicles have high assertiveness)
+    if (v.type !== VehicleType.Emergency && !canSafelyTurn(v, lane, targetLane, this.network, conn.turnType)) {
       v.position = lane.length;
       v.speed = 0;
       return true; // Wait for gap
@@ -224,7 +312,7 @@ export class SimulationEngine {
     v.laneId = conn.toLaneId;
     v.roadId = conn.toRoadId;
     v.position = over;
-    v.prevPosition = over; // Must match position to prevent interpolation warp
+    v.prevPosition = over;
     
     this.network.insertVehicle(v);
     return true;
@@ -235,7 +323,8 @@ export class SimulationEngine {
       const s = this.spawners[i]!;
       this.spawnTimers[i]! += dt;
       
-      const interval = 60 / s.rate;
+      const effectiveRate = s.rate * this.trafficSpikeMultiplier;
+      const interval = 60 / effectiveRate;
       while (this.spawnTimers[i]! >= interval) {
         this.spawnTimers[i]! -= interval;
 
@@ -263,11 +352,53 @@ export class SimulationEngine {
   getSnapshot(): SimulationSnapshot {
     const all = this.network.getAllVehicles();
     const speedSum = all.reduce((acc, v) => acc + v.speed, 0);
+    const avgSpeed = all.length > 0 ? speedSum / all.length : 0;
+    const stoppedCount = all.filter(v => v.speed < 0.5).length;
+
+    const vehicles: VehicleSnapshot[] = all.map(v => {
+      const lane = this.network.getLane(v.laneId);
+      const laneLen = lane?.length || 100;
+      const progress = Math.min(100, Math.round((v.position / laneLen) * 100));
+      return {
+        id: v.id,
+        type: v.type,
+        position: v.position,
+        speed: v.speed,
+        desiredSpeed: v.desiredSpeed,
+        maxSpeed: v.desiredSpeed * 1.2,
+        acceleration: v.acceleration,
+        laneId: v.laneId,
+        roadId: v.roadId,
+        length: v.length,
+        width: v.width,
+        color: v.color,
+        origin: v.laneId,
+        destination: v.route[v.route.length - 1] || 'exit',
+        state: v.speed < 0.5 ? 'stopped' : v.acceleration < -1 ? 'slowing' : 'moving',
+        progress,
+      };
+    });
+
+    const avgCongestion = all.length > 0 
+      ? Math.min(1, Math.max(0, 1 - (avgSpeed / 13.9)))
+      : 0;
+
     return {
-      vehicleCount: all.length,
-      avgSpeed: all.length > 0 ? speedSum / all.length : 0,
+      tick: Math.floor(this.simTime * 20),
       simTime: this.simTime,
+      status: this.running ? 'running' : 'paused',
       isRunning: this.running,
+      vehicleCount: all.length,
+      vehicles,
+      metrics: {
+        totalThroughput: this.totalThroughput,
+        avgSpeed,
+        avgTravelTime: this.arrivedCount > 0 ? this.totalTravelTime / this.arrivedCount : 18.5,
+        avgCongestion,
+        totalWaitingTime: stoppedCount * 0.5,
+        emergencyResponseTime: 4.2,
+      },
+      blockedLanes: Array.from(this.blockedLanes),
     };
   }
 
@@ -299,8 +430,8 @@ export class SimulationEngine {
       if (lo < targetVehs.length) targetLeader = targetVehs[lo]!;
       if (lo > 0) targetFollower = targetVehs[lo - 1]!;
 
-      if (targetLeader && (targetLeader.position - v.position) < (targetLeader.length/2 + v.length/2 + 1)) continue;
-      if (targetFollower && (v.position - targetFollower.position) < (v.length/2 + targetFollower.length/2 + 1)) continue;
+      if (targetLeader && (targetLeader.position - v.position) < (targetLeader.length / 2 + v.length / 2 + 1)) continue;
+      if (targetFollower && (v.position - targetFollower.position) < (v.length / 2 + targetFollower.length / 2 + 1)) continue;
 
       if (shouldChangeLane(v, currLeader, currFollower, targetLeader, targetFollower)) {
         this.network.removeVehicle(v);

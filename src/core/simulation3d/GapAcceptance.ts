@@ -6,10 +6,11 @@ import type { VehicleState, Lane } from './types';
 import { VehicleType } from './types';
 import { RoadNetwork } from './RoadNetwork';
 
-export const GAP_PARAMS = {
+export const GAP_PARAMS: Record<VehicleType, { criticalGap: number; followUp: number }> = {
   [VehicleType.Car]: { criticalGap: 4.5, followUp: 2.5 },
   [VehicleType.Truck]: { criticalGap: 6.5, followUp: 3.5 },
   [VehicleType.Bus]: { criticalGap: 6.0, followUp: 3.0 },
+  [VehicleType.Emergency]: { criticalGap: 2.5, followUp: 1.5 },
 };
 
 export function canSafelyTurn(
