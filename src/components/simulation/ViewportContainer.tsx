@@ -3,50 +3,55 @@ import { useSimulationStore } from '../../stores';
 import { MapView } from './MapView';
 import { Simulation3DView } from './Simulation3DView';
 import { IncidentSimulationView } from './IncidentSimulationView';
-import { useSimulation } from '../../hooks/useSimulation';
+import { loadSimulationScenario, startSimulation } from '../../services/simulationService';
+import { SimulationStatus } from '../../types';
 
 export const ViewportContainer: React.FC = () => {
-  const { viewMode, setViewMode, simulationMode, activeIncident, status } = useSimulationStore();
-  const { snapshot, start, selectScenario } = useSimulation();
+  const { viewMode, setViewMode, simulationMode, activeIncident, status, snapshot } = useSimulationStore();
 
   const handleSelectRegion = React.useCallback((scenarioId: string) => {
-    selectScenario(scenarioId);
+    loadSimulationScenario(scenarioId);
     setViewMode('simulation');
-    if (status !== 'running') {
-      start();
+    if (status !== SimulationStatus.RUNNING) {
+      startSimulation();
     }
-  }, [selectScenario, setViewMode, status, start]);
+  }, [setViewMode, status]);
 
-  const showMap = simulationMode === 'dashboard' || simulationMode === 'transitioning_in';
-  const showIncident = simulationMode === 'simulation' || simulationMode === 'transitioning_out';
+  const isMapActive = simulationMode === 'dashboard' && viewMode === 'map';
+  const isIncidentActive = (simulationMode === 'simulation' || simulationMode === 'transitioning_out') && activeIncident !== null;
 
   return (
     <div className="flex-1 relative w-full h-full overflow-hidden">
-      {/* Dashboard / Map View */}
+      {/* Primary 3D Continuous Simulation Viewport */}
       <div 
-        className="absolute inset-0 w-full h-full transition-opacity duration-500"
+        className="absolute inset-0 w-full h-full transition-opacity duration-300"
         style={{ 
-          opacity: showMap ? 1 : 0,
-          pointerEvents: showMap && simulationMode === 'dashboard' ? 'auto' : 'none'
+          opacity: isMapActive ? 0 : 1,
+          pointerEvents: isMapActive ? 'none' : 'auto',
+          zIndex: 1
         }}
       >
-        {viewMode === 'map' ? (
-          <MapView onSelectRegion={handleSelectRegion} />
-        ) : (
-          <Simulation3DView />
-        )}
+        <Simulation3DView />
       </div>
 
-      {/* Incident Simulation View */}
-      <div 
-        className="absolute inset-0 w-full h-full transition-opacity duration-500"
-        style={{ 
-          opacity: showIncident ? 1 : 0,
-          pointerEvents: showIncident && simulationMode === 'simulation' ? 'auto' : 'none'
+      {/* Regional City Map (Leaflet) */}
+      <div
+        className="absolute inset-0 w-full h-full transition-opacity duration-300"
+        style={{
+          opacity: isMapActive ? 1 : 0,
+          pointerEvents: isMapActive ? 'auto' : 'none',
+          zIndex: 2
         }}
       >
-        {activeIncident && <IncidentSimulationView incident={activeIncident} snapshot={snapshot} />}
+        <MapView onSelectRegion={handleSelectRegion} />
       </div>
+
+      {/* Incident Tactical Response Overlay */}
+      {isIncidentActive && (
+        <div className="absolute inset-0 w-full h-full z-20 pointer-events-auto">
+          <IncidentSimulationView incident={activeIncident} snapshot={snapshot} />
+        </div>
+      )}
     </div>
   );
 };

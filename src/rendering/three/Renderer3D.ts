@@ -8,7 +8,9 @@ export class Renderer3D {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
+  private canvas: HTMLCanvasElement;
 
+  private worldGroup = new THREE.Group();
   private vehicleMeshes = new Map<string, THREE.Group>();
   private lightMaterials = new Map<string, {r: THREE.MeshStandardMaterial, y: THREE.MeshStandardMaterial, g: THREE.MeshStandardMaterial}>();
   
@@ -16,8 +18,14 @@ export class Renderer3D {
   private birds: any[] = [];
   
   private lastTime = performance.now();
+  private raycaster = new THREE.Raycaster();
+  private mouse = new THREE.Vector2();
+  private selectedVehicleId: string | null = null;
+  private onVehicleSelectCallback?: (id: string | null) => void;
+  private selectionBeacon: THREE.Mesh;
 
   constructor(canvas: HTMLCanvasElement, engine: SimulationEngine) {
+    this.canvas = canvas;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#87CEEB');
     this.scene.fog = new THREE.FogExp2('#87CEEB', 0.012);
@@ -34,9 +42,25 @@ export class Renderer3D {
     this.controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
     this.controls.target.set(0, 0, 0);
 
+    this.scene.add(this.worldGroup);
+
+    // Cyan selection beacon over active vehicle
+    const beaconGeo = new THREE.ConeGeometry(0.6, 1.4, 4);
+    beaconGeo.rotateX(Math.PI);
+    const beaconMat = new THREE.MeshStandardMaterial({
+      color: '#4cd7f6',
+      emissive: '#4cd7f6',
+      emissiveIntensity: 2.5
+    });
+    this.selectionBeacon = new THREE.Mesh(beaconGeo, beaconMat);
+    this.selectionBeacon.visible = false;
+    this.scene.add(this.selectionBeacon);
+
     this.setupLighting();
     this.generateStaticWorld(engine);
     this.generateEnvironment();
+
+    this.canvas.addEventListener('click', this.onCanvasClick);
   }
 
   public resize(width: number, height: number, dpr: number) {
@@ -72,7 +96,7 @@ export class Renderer3D {
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
-    this.scene.add(ground);
+    this.worldGroup.add(ground);
 
     // Patches for subtle color variation
     const patchMat = new THREE.MeshStandardMaterial({ color: '#4d8f4d', roughness: 1, metalness: 0 });
@@ -83,7 +107,7 @@ export class Renderer3D {
         patch.rotation.x = -Math.PI / 2;
         patch.rotation.z = Math.random() * Math.PI;
         patch.receiveShadow = true;
-        this.scene.add(patch);
+        this.worldGroup.add(patch);
     }
 
     const roadMat = new THREE.MeshStandardMaterial({ color: '#52525b', roughness: 0.8 });
@@ -110,7 +134,7 @@ export class Renderer3D {
           swMesh.rotation.x = -Math.PI / 2;
           swMesh.rotation.z = -angle; // rotate in Z after X rotation to yaw
           swMesh.receiveShadow = true;
-          this.scene.add(swMesh);
+          this.worldGroup.add(swMesh);
 
           // Road surface
           const rdGeo = new THREE.PlaneGeometry(dist, 3.5);
@@ -119,7 +143,7 @@ export class Renderer3D {
           rdMesh.rotation.x = -Math.PI / 2;
           rdMesh.rotation.z = -angle;
           rdMesh.receiveShadow = true;
-          this.scene.add(rdMesh);
+          this.worldGroup.add(rdMesh);
           
           // Center line (dashed)
           const numDashes = Math.floor(dist / 1.5);
@@ -134,7 +158,7 @@ export class Renderer3D {
              dash.position.set(x + perpX, 0.03, y + perpY);
              dash.rotation.x = -Math.PI / 2;
              dash.rotation.z = -angle;
-             this.scene.add(dash);
+             this.worldGroup.add(dash);
           }
 
           // Edge lines (solid)
@@ -145,13 +169,13 @@ export class Renderer3D {
           edge1.position.set(midX + p1X, 0.03, midY + p1Y);
           edge1.rotation.x = -Math.PI / 2;
           edge1.rotation.z = -angle;
-          this.scene.add(edge1);
+          this.worldGroup.add(edge1);
           
           const edge2 = new THREE.Mesh(edgeGeo, lineMat);
           edge2.position.set(midX - p1X, 0.03, midY - p1Y);
           edge2.rotation.x = -Math.PI / 2;
           edge2.rotation.z = -angle;
-          this.scene.add(edge2);
+          this.worldGroup.add(edge2);
         }
       }
     }
@@ -163,14 +187,14 @@ export class Renderer3D {
       ixSwMesh.position.set(ix.position.x, 0.015, ix.position.y);
       ixSwMesh.rotation.x = -Math.PI / 2;
       ixSwMesh.receiveShadow = true;
-      this.scene.add(ixSwMesh);
+      this.worldGroup.add(ixSwMesh);
 
       const ixRdGeo = new THREE.PlaneGeometry(ix.size, ix.size);
       const ixRdMesh = new THREE.Mesh(ixRdGeo, roadMat);
       ixRdMesh.position.set(ix.position.x, 0.025, ix.position.y);
       ixRdMesh.rotation.x = -Math.PI / 2;
       ixRdMesh.receiveShadow = true;
-      this.scene.add(ixRdMesh);
+      this.worldGroup.add(ixRdMesh);
       // Zebra crossings — flush on road surface
       const zebraGeo = new THREE.PlaneGeometry(0.6, 4);
       const zebraMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.7, depthWrite: true });
@@ -184,7 +208,7 @@ export class Renderer3D {
           if (i === 3) { zMesh.position.set(ix.position.x + j, 0.026, ix.position.y - dist); zMesh.rotation.y = Math.PI / 2; }
           zMesh.rotation.x = -Math.PI / 2;
           zMesh.receiveShadow = true;
-          this.scene.add(zMesh);
+          this.worldGroup.add(zMesh);
         }
       }
 
@@ -202,7 +226,7 @@ export class Renderer3D {
       manGroup.add(mVest);
       manGroup.position.set(ix.position.x, 0, ix.position.y);
       manGroup.castShadow = true;
-      this.scene.add(manGroup);
+      this.worldGroup.add(manGroup);
       (this as any).trafficMan = manGroup;
 
       // Traffic Lights
@@ -223,7 +247,7 @@ export class Renderer3D {
         const poleGroup = new THREE.Group();
         poleGroup.position.set(p.x + perpX, 0, p.y + perpY);
         poleGroup.rotation.y = -a;
-        this.scene.add(poleGroup);
+        this.worldGroup.add(poleGroup);
 
         const pole = new THREE.Mesh(poleGeo, poleMat);
         pole.position.set(0, 3, 0);
@@ -568,6 +592,38 @@ export class Renderer3D {
                 group.add(w);
             }
         }
+    } else if (v.type === VehicleType.Emergency) {
+        // Ambulance body
+        const geo = new THREE.BoxGeometry(v.length, 1.4, v.width);
+        const mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.2 });
+        const body = new THREE.Mesh(geo, mat);
+        body.position.y = 0.9;
+        body.castShadow = true;
+        group.add(body);
+
+        // Emergency Red Stripe
+        const stripeGeo = new THREE.BoxGeometry(v.length * 0.98, 0.35, v.width + 0.02);
+        const stripeMat = new THREE.MeshStandardMaterial({ color: '#dc2626' });
+        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+        stripe.position.y = 0.9;
+        group.add(stripe);
+
+        // Flashing Lightbar
+        const sirenGeo = new THREE.BoxGeometry(0.8, 0.25, v.width * 0.6);
+        const sirenMat = new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#ef4444', emissiveIntensity: 2.5 });
+        const siren = new THREE.Mesh(sirenGeo, sirenMat);
+        siren.position.set(0, 1.7, 0);
+        group.add(siren);
+        group.userData.sirenMat = sirenMat;
+
+        // Wheels
+        for (const wx of [v.length / 2 - 0.8, -v.length / 2 + 0.8]) {
+            for (const wz of [v.width / 2, -v.width / 2]) {
+                const w = new THREE.Mesh(wheelGeo, wheelMat);
+                w.position.set(wx, 0.3, wz);
+                group.add(w);
+            }
+        }
     } else {
         // Car body
         const geo = new THREE.BoxGeometry(v.length, 0.8, v.width);
@@ -623,8 +679,51 @@ export class Renderer3D {
     blR.position.set(-v.length/2, 0.6, v.width/2 - 0.2);
     group.add(blL, blR);
     
-    group.userData = { brakelightMat: blMat };
+    group.userData = { ...group.userData, brakelightMat: blMat, vehicleId: v.id };
     return group;
+  }
+
+  private onCanvasClick = (e: MouseEvent) => {
+    const rect = this.canvas.getBoundingClientRect();
+    this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    
+    const meshes = Array.from(this.vehicleMeshes.values());
+    const hits = this.raycaster.intersectObjects(meshes, true);
+    if (hits.length > 0) {
+      let target: THREE.Object3D | null = hits[0]!.object;
+      while (target && !target.userData.vehicleId && target.parent) {
+        target = target.parent;
+      }
+      const vId = target?.userData.vehicleId || null;
+      this.setSelectedVehicle(vId);
+      this.onVehicleSelectCallback?.(vId);
+    } else {
+      this.setSelectedVehicle(null);
+      this.onVehicleSelectCallback?.(null);
+    }
+  };
+
+  public setVehicleSelectCallback(cb: (id: string | null) => void) {
+    this.onVehicleSelectCallback = cb;
+  }
+
+  public setSelectedVehicle(id: string | null) {
+    this.selectedVehicleId = id;
+  }
+
+  public rebuildWorld(engine: SimulationEngine) {
+    while (this.worldGroup.children.length > 0) {
+      const child = this.worldGroup.children[0]!;
+      this.worldGroup.remove(child);
+    }
+    for (const [, mesh] of this.vehicleMeshes) {
+      this.scene.remove(mesh);
+    }
+    this.vehicleMeshes.clear();
+    this.lightMaterials.clear();
+    this.generateStaticWorld(engine);
   }
 
   public render(engine: SimulationEngine): void {
@@ -664,6 +763,12 @@ export class Renderer3D {
         mesh.userData.brakelightMat.emissive.set(braking ? '#f00' : '#500');
         mesh.userData.brakelightMat.emissiveIntensity = braking ? 2 : 0.5;
       }
+
+      if (mesh.userData.sirenMat) {
+        const flash = Math.sin(now * 0.015) > 0;
+        mesh.userData.sirenMat.color.set(flash ? '#ef4444' : '#3b82f6');
+        mesh.userData.sirenMat.emissive.set(flash ? '#ef4444' : '#3b82f6');
+      }
     }
     
     for (const [id, mesh] of this.vehicleMeshes.entries()) {
@@ -671,6 +776,16 @@ export class Renderer3D {
         this.scene.remove(mesh);
         this.vehicleMeshes.delete(id);
       }
+    }
+
+    // Update Selection Beacon
+    if (this.selectedVehicleId && this.vehicleMeshes.has(this.selectedVehicleId)) {
+      const vMesh = this.vehicleMeshes.get(this.selectedVehicleId)!;
+      this.selectionBeacon.visible = true;
+      this.selectionBeacon.position.set(vMesh.position.x, 3.8 + Math.sin(now * 0.008) * 0.3, vMesh.position.z);
+      this.selectionBeacon.rotation.y += dt * 3;
+    } else {
+      this.selectionBeacon.visible = false;
     }
 
     // 2. Traffic Lights
@@ -770,6 +885,7 @@ export class Renderer3D {
   }
 
   public dispose() {
+    this.canvas.removeEventListener('click', this.onCanvasClick);
     this.renderer.dispose();
   }
 }
