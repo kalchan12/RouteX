@@ -166,3 +166,30 @@ function heuristic(nodeId: string, destination: string, network: RoadNetwork): n
   const dy = node.y - dest.y;
   return Math.sqrt(dx * dx + dy * dy) / 15;
 }
+
+export function createHierarchicalRouting(): RoutingAlgorithm {
+  return {
+    name: 'dynamic_hld',
+    description: 'Dynamic Hierarchical Multi-Level Routing — uses highway and arterial avenue network partitioning for rapid long-distance pathfinding.',
+    findRoute(network: RoadNetwork, origin: string, destination: string, cost: CostFunction = defaultCost): Route | null {
+      const start = performance.now();
+      const hierarchicalCost: CostFunction = (road: Road) => {
+        const base = cost(road);
+        if (base === Infinity) return Infinity;
+        // Arterials and multi-lane roads get a preference factor
+        const bonus = road.priority > 0 || road.lanes > 1 ? 0.75 : 1.0;
+        return base * bonus;
+      };
+
+      const astar = createAStar();
+      const res = astar.findRoute(network, origin, destination, hierarchicalCost);
+      if (!res) return null;
+
+      return {
+        ...res,
+        computationMs: performance.now() - start,
+        algorithm: 'dynamic_hld',
+      };
+    },
+  };
+}
