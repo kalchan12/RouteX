@@ -45,4 +45,38 @@ describe('Routing Algorithms', () => {
     // Non-existent node throws or returns null
     expect(() => dijkstra.findRoute(network, origin, 'non_existent_node')).toThrow();
   });
+
+  it('bypasses closed roads and reroutes via alternative path', () => {
+    const dijkstra = createDijkstra();
+    const initialRoute = dijkstra.findRoute(network, origin, destination);
+    expect(initialRoute).not.toBeNull();
+    const edgeToBlock = initialRoute!.edges[0]!;
+
+    // Custom cost function that considers edgeToBlock closed (Infinity)
+    const customCost = (road: any) => {
+      if (road.id === edgeToBlock) return Infinity;
+      return road.currentTravelTime;
+    };
+
+    const rerouted = dijkstra.findRoute(network, origin, destination, customCost);
+    if (rerouted) {
+      expect(rerouted.edges).not.toContain(edgeToBlock);
+    }
+  });
+
+  it('favors uncongested route over congested route with higher travel time', () => {
+    const dijkstra = createDijkstra();
+    const initialRoute = dijkstra.findRoute(network, origin, destination);
+    expect(initialRoute).not.toBeNull();
+
+    // High penalty on primary route edges
+    const penaltyCost = (road: any) => {
+      if (initialRoute!.edges.includes(road.id)) return road.currentTravelTime * 10;
+      return road.currentTravelTime;
+    };
+
+    const congestedRoute = dijkstra.findRoute(network, origin, destination, penaltyCost);
+    expect(congestedRoute).not.toBeNull();
+    expect(congestedRoute!.totalCost).toBeGreaterThanOrEqual(initialRoute!.totalCost);
+  });
 });

@@ -98,3 +98,61 @@ export function refreshDynamicState(network: RoadNetwork, vehicleCounts: Map<str
     updateRoadDynamicState(road, count);
   }
 }
+
+export interface NetworkValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export function validateNetwork(network: RoadNetwork): NetworkValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (network.nodes.size === 0) {
+    errors.push('Network must contain at least one node');
+  }
+  if (network.edges.size === 0) {
+    errors.push('Network must contain at least one edge');
+  }
+
+  // Check each node
+  for (const [nodeId, node] of network.nodes) {
+    if (!node.id || typeof node.x !== 'number' || typeof node.y !== 'number') {
+      errors.push(`Invalid node definition for node ${nodeId}`);
+    }
+    const outEdges = network.adjacency.get(nodeId) ?? [];
+    const inEdges = network.incoming.get(nodeId) ?? [];
+    if (outEdges.length === 0 && inEdges.length === 0) {
+      warnings.push(`Node ${nodeId} is isolated (no incoming or outgoing edges)`);
+    }
+  }
+
+  // Check each edge
+  for (const [edgeId, road] of network.edges) {
+    if (!network.nodes.has(road.source)) {
+      errors.push(`Road ${edgeId} references non-existent source node: ${road.source}`);
+    }
+    if (!network.nodes.has(road.destination)) {
+      errors.push(`Road ${edgeId} references non-existent destination node: ${road.destination}`);
+    }
+    if (road.distance <= 0) {
+      errors.push(`Road ${edgeId} has invalid distance: ${road.distance} (must be > 0)`);
+    }
+    if (road.speedLimit <= 0) {
+      errors.push(`Road ${edgeId} has invalid speedLimit: ${road.speedLimit} (must be > 0)`);
+    }
+    if (road.capacity <= 0) {
+      errors.push(`Road ${edgeId} has invalid capacity: ${road.capacity} (must be > 0)`);
+    }
+    if (road.lanes < 1) {
+      errors.push(`Road ${edgeId} has invalid lane count: ${road.lanes} (must be >= 1)`);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
