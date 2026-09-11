@@ -221,10 +221,64 @@ const roadClosure = (): ScenarioConfig => {
   };
 };
 
+const gedaPlaza = (): ScenarioConfig => {
+  const cols = 6, rows = 6, block = 350;
+  const network = buildGridNetwork(cols, rows, block);
+  return {
+    id: 'geda_plaza',
+    name: 'Aba Geda Commercial Plaza',
+    duration: 600,
+    network,
+    trafficLights: buildTrafficLights(cols, rows, 12, 12),
+    events: [],
+    incidents: [],
+    pedestrians: [],
+    vehicleSpawnRate: 4,
+    vehicleTypes: [VehicleType.NORMAL, VehicleType.BUS],
+  };
+};
+
+const francoTransit = (): ScenarioConfig => {
+  const cols = 7, rows = 5, block = 420;
+  const network = buildGridNetwork(cols, rows, block);
+  return {
+    id: 'franco',
+    name: 'Franco Transit Depot',
+    duration: 600,
+    network,
+    trafficLights: buildTrafficLights(cols, rows, 18, 14),
+    events: [],
+    incidents: [],
+    pedestrians: [],
+    vehicleSpawnRate: 5,
+    vehicleTypes: [VehicleType.NORMAL, VehicleType.BUS, VehicleType.TRUCK],
+  };
+};
+
+const randomSector = (): ScenarioConfig => {
+  const cols = 6, rows = 6, block = 400;
+  const network = buildGridNetwork(cols, rows, block);
+  return {
+    id: 'random',
+    name: 'Procedural Sector Grid',
+    duration: 600,
+    network,
+    trafficLights: buildTrafficLights(cols, rows, 14, 14),
+    events: [],
+    incidents: [],
+    pedestrians: [],
+    vehicleSpawnRate: 3,
+    vehicleTypes: [VehicleType.NORMAL, VehicleType.TRUCK, VehicleType.EMERGENCY],
+  };
+};
+
 export const defaultScenarios: ScenarioConfig[] = [
   normal(),
   rushHour(),
   accident(),
   emergency(),
   roadClosure(),
+  gedaPlaza(),
+  francoTransit(),
+  randomSector(),
 ];

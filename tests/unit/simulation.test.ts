@@ -6,8 +6,27 @@ import { idmAcceleration } from '../../src/core/simulation3d/IDM';
 import { CAR_PARAMS, EMERGENCY_PARAMS } from '../../src/core/simulation3d/IDM';
 
 describe('Default Scenarios & Topology', () => {
-  it('loads 5 default scenarios', () => {
-    expect(defaultScenarios).toHaveLength(5);
+  it('loads all 8 default scenarios including distinct Adama topologies and procedural sector', () => {
+    expect(defaultScenarios).toHaveLength(8);
+    const scenarioIds = defaultScenarios.map(s => s.id);
+    expect(scenarioIds).toContain('normal');
+    expect(scenarioIds).toContain('rush_hour');
+    expect(scenarioIds).toContain('accident');
+    expect(scenarioIds).toContain('emergency');
+    expect(scenarioIds).toContain('road_closure');
+    expect(scenarioIds).toContain('geda_plaza');
+    expect(scenarioIds).toContain('franco');
+    expect(scenarioIds).toContain('random');
+  });
+
+  it('generates distinct 3D scenario configurations for all topologies', () => {
+    const ids = ['normal', 'expressway', 'posta_bet', 'hospital', 'wonji', 'geda_plaza', 'franco', 'random'];
+    for (const id of ids) {
+      const scenario = getScenario3D(id);
+      expect(scenario.roads.length).toBeGreaterThan(0);
+      expect(scenario.spawners.length).toBeGreaterThan(0);
+      expect(scenario.name).toBeDefined();
+    }
   });
 
   it('all scenarios have valid nodes, edges, and rates', () => {

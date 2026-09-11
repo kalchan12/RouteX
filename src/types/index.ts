@@ -228,6 +228,7 @@ export interface ActiveIncident {
   assignedUnits: string[];
   roadId: string | null;
   estimatedClearanceMinutes: number | null;
+  scenarioId?: string;
 }
 
 export type SimulationMode = 'dashboard' | 'transitioning_in' | 'simulation' | 'transitioning_out';
