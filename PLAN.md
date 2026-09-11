@@ -400,6 +400,7 @@ Real-time simulation snapshots are recording into the Zustand telemetry series; 
 Keep a short history of meaningful completed work.
 
 ```text
+- [2026-09-11] Resolved login screen freezing issue: decoupled Dashboard and simulation ticker from unauthenticated LoginPortal, stabilized boot timers with refs, and added instant bypass.
 - [2026-09-11] Implemented network topology validation and unit tests in src/core/network/ and tests/unit/network.test.ts (23 total unit tests passing).
 - [2026-09-11] Added dynamic obstacle evasion in MOBIL and unblocked lane selection in 3D continuous simulation engine.
 - [2026-09-11] Added routing tests for road closures and dynamic congestion-aware detour cost functions.

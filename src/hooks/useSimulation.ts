@@ -32,10 +32,10 @@ export function useSimulation() {
     setIsWorkerReady(true);
     // Ensure 3D engine singleton is initialized
     getSimulationEngine();
-    if (!selectedScenarioId && defaultScenarios[0]) {
+    if (!useSimulationStore.getState().selectedScenarioId && defaultScenarios[0]) {
       setSelectedScenarioId(defaultScenarios[0].id);
     }
-  }, [setScenarios, setIsWorkerReady, setSelectedScenarioId, selectedScenarioId]);
+  }, [setScenarios, setIsWorkerReady, setSelectedScenarioId]);
 
   const start = useCallback(() => {
     startSimulation();

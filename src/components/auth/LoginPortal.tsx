@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSimulationStore } from '../../stores';
 
 interface LoginPortalProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess?: () => void;
 }
 
 export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
@@ -14,6 +14,16 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
   const [bootStep, setBootStep] = useState(0);
   const [progress, setProgress] = useState(0);
 
+  const onLoginSuccessRef = useRef(onLoginSuccess);
+  useEffect(() => {
+    onLoginSuccessRef.current = onLoginSuccess;
+  });
+
+  const operatorIdRef = useRef(operatorId);
+  useEffect(() => {
+    operatorIdRef.current = operatorId;
+  });
+
   const handleFillDemo = () => {
     setOperatorId('RX-8842');
     setPassword('routex-adama-2026');
@@ -22,6 +32,13 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
   const handleAuthorize = (e: React.FormEvent) => {
     e.preventDefault();
     setIsBooting(true);
+  };
+
+  const handleInstantEnter = () => {
+    login(operatorIdRef.current || 'RX-8842');
+    if (onLoginSuccessRef.current) {
+      onLoginSuccessRef.current();
+    }
   };
 
   // Holographic Bootup & Welcome Operator sequence
@@ -34,18 +51,20 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
           clearInterval(interval);
           return 100;
         }
-        return prev + 5;
+        return Math.min(100, prev + 5);
       });
-    }, 40);
+    }, 35);
 
-    const timer1 = setTimeout(() => setBootStep(1), 300);
-    const timer2 = setTimeout(() => setBootStep(2), 700);
-    const timer3 = setTimeout(() => setBootStep(3), 1100);
-    const timer4 = setTimeout(() => setBootStep(4), 1600);
+    const timer1 = setTimeout(() => setBootStep(1), 250);
+    const timer2 = setTimeout(() => setBootStep(2), 600);
+    const timer3 = setTimeout(() => setBootStep(3), 950);
+    const timer4 = setTimeout(() => setBootStep(4), 1350);
     const timer5 = setTimeout(() => {
-      login(operatorId || 'RX-8842');
-      onLoginSuccess();
-    }, 2400);
+      login(operatorIdRef.current || 'RX-8842');
+      if (onLoginSuccessRef.current) {
+        onLoginSuccessRef.current();
+      }
+    }, 1750);
 
     return () => {
       clearInterval(interval);
@@ -55,7 +74,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
       clearTimeout(timer4);
       clearTimeout(timer5);
     };
-  }, [isBooting, operatorId, login, onLoginSuccess]);
+  }, [isBooting, login]);
 
   return (
     <div className="relative w-screen h-screen bg-[#0d0e15] overflow-hidden flex items-center justify-center select-none font-body-md text-on-surface">
@@ -111,9 +130,18 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({ onLoginSuccess }) => {
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="flex justify-between w-full font-data-sm text-[11px] text-on-surface-variant mt-2 font-mono">
+          <div className="flex justify-between items-center w-full font-data-sm text-[11px] text-on-surface-variant mt-2 font-mono">
             <span>TERMINAL: TERM-ADAMA-01</span>
-            <span className="text-primary font-bold">{progress}% READY</span>
+            <div className="flex items-center gap-3">
+              <span className="text-primary font-bold">{progress}% READY</span>
+              <button
+                type="button"
+                onClick={handleInstantEnter}
+                className="text-[10px] text-on-surface-variant hover:text-primary transition-colors underline"
+              >
+                Skip Sequence &gt;&gt;
+              </button>
+            </div>
           </div>
         </div>
       ) : (

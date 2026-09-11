@@ -13,7 +13,7 @@ import { AnimatedPanel } from './components/layout/AnimatedPanel';
 import { ViewportContainer } from './components/simulation/ViewportContainer';
 import './App.css';
 
-export function App() {
+function Dashboard() {
   const {
     snapshot,
     status,
@@ -33,7 +33,6 @@ export function App() {
   } = useSimulation();
 
   const { 
-    isAuthenticated,
     panelsVisible,
     simulationMode,
     onTransitionComplete
@@ -51,13 +50,6 @@ export function App() {
   const [isBenchmarkOpen, setIsBenchmarkOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isIncidentsOpen, setIsIncidentsOpen] = useState(false);
-
-
-
-  // If not authenticated, render Mission Control Login Portal with "Welcome Operator" animation sequence
-  if (!isAuthenticated) {
-    return <LoginPortal onLoginSuccess={() => {}} />;
-  }
 
   return (
     <div className="bg-background text-on-surface h-screen w-screen overflow-hidden flex flex-col font-body-md text-body-md select-none animate-fadeIn">
@@ -126,6 +118,16 @@ export function App() {
       />
     </div>
   );
+}
+
+export function App() {
+  const { isAuthenticated } = useSimulationStore();
+
+  if (!isAuthenticated) {
+    return <LoginPortal />;
+  }
+
+  return <Dashboard />;
 }
 
 export default App;
