@@ -70,6 +70,7 @@ interface SimulationStoreState {
   panelsVisible: boolean;
   selectedEntityId: string | null;
   selectedEntityType: 'vehicle' | 'signal' | 'pedestrian' | 'incident' | null;
+  actionCamTargetId: string | null;
 
   // Incident Simulation Actions
   enterIncidentSimulation: (incident: ActiveIncident) => void;
@@ -77,6 +78,8 @@ interface SimulationStoreState {
   onTransitionComplete: () => void;
   setSelectedEntity: (id: string | null, type?: 'vehicle' | 'signal' | 'pedestrian' | 'incident' | null) => void;
   clearSelectedEntity: () => void;
+  setActionCamTargetId: (id: string | null) => void;
+  setPanelsVisible: (visible: boolean) => void;
 }
 
 export const useSimulationStore = create<SimulationStoreState>((set) => ({
@@ -107,6 +110,7 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   panelsVisible: true,
   selectedEntityId: null,
   selectedEntityType: null,
+  actionCamTargetId: null,
 
   login: (id = 'RX-8842') => set({ isAuthenticated: true, operatorId: id }),
   logout: () => set({ isAuthenticated: false }),
@@ -157,7 +161,7 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
   enterIncidentSimulation: (incident) => set({ 
     simulationMode: 'transitioning_in',
     activeIncident: incident,
-    panelsVisible: false 
+    panelsVisible: true // Keep interface accessible and responsive
   }),
   
   exitIncidentSimulation: () => set({ 
@@ -181,4 +185,6 @@ export const useSimulationStore = create<SimulationStoreState>((set) => ({
 
   setSelectedEntity: (id, type) => set({ selectedEntityId: id, selectedEntityType: type || null }),
   clearSelectedEntity: () => set({ selectedEntityId: null, selectedEntityType: null }),
+  setActionCamTargetId: (actionCamTargetId) => set({ actionCamTargetId }),
+  setPanelsVisible: (panelsVisible) => set({ panelsVisible }),
 }));

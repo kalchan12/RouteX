@@ -54,6 +54,14 @@ function broadcastSnapshot(): void {
     id: v.id,
     type: v.type === 'emergency' 
       ? VehicleType.EMERGENCY 
+      : v.type === 'police'
+      ? VehicleType.POLICE
+      : v.type === 'motorcycle'
+      ? VehicleType.MOTORCYCLE
+      : v.type === 'bajaj'
+      ? VehicleType.BAJAJ
+      : v.type === 'minibus_taxi'
+      ? VehicleType.MINIBUS
       : v.type === 'truck' 
       ? VehicleType.TRUCK 
       : v.type === 'bus' 
@@ -100,6 +108,14 @@ function broadcastSnapshot(): void {
       totalWaitingTime: snap3d.metrics.totalWaitingTime,
       emergencyResponseTime: snap3d.metrics.emergencyResponseTime ?? 4.2,
     },
+    citations: snap3d.citations,
+    lastIncident: snap3d.lastIncident ? {
+      type: snap3d.lastIncident.type as any,
+      vehicleId: snap3d.lastIncident.vehicleId,
+      description: snap3d.lastIncident.description,
+      timestamp: snap3d.lastIncident.time,
+    } : null,
+    activeAlgorithm: (snap3d.activeAlgorithm || 'astar') as 'dijkstra' | 'astar' | 'dynamic_hld',
   };
 
   store.setSnapshot(snapshot);
@@ -170,3 +186,23 @@ export function clearAllIncidents(): void {
   engine.clearIncidents();
   broadcastSnapshot();
 }
+
+export function setSimulationAlgorithm(algo: 'dijkstra' | 'astar' | 'dynamic_hld'): void {
+  const engine = getSimulationEngine();
+  engine.setAlgorithm(algo);
+  useSimulationStore.getState().setSelectedAlgorithm(algo);
+  broadcastSnapshot();
+}
+
+export function spawnPoliceUnits(count = 1): void {
+  const engine = getSimulationEngine();
+  engine.spawnPolice(count);
+  broadcastSnapshot();
+}
+
+export function spawnMotorcycleUnits(count = 1): void {
+  const engine = getSimulationEngine();
+  engine.spawnMotorcyclePatrol(count);
+  broadcastSnapshot();
+}
+

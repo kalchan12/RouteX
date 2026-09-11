@@ -2,6 +2,8 @@ import { useRef, useEffect, useState, memo } from 'react';
 import { getSimulationEngine } from '../../services/simulationService';
 import { Renderer3D } from '../../rendering/three/Renderer3D';
 import { useSimulationStore } from '../../stores';
+import { ActionCamOverlay } from './ActionCamOverlay';
+import { DispatchDock } from './DispatchDock';
 
 /**
  * 3D Traffic Simulation View.
@@ -17,6 +19,7 @@ export const Simulation3DView = memo(function Simulation3DView() {
   const selectedScenarioId = useSimulationStore((s) => s.selectedScenarioId);
   const selectedVehicleId = useSimulationStore((s) => s.selectedVehicleId);
   const setSelectedVehicleId = useSimulationStore((s) => s.setSelectedVehicleId);
+  const actionCamTargetId = useSimulationStore((s) => s.actionCamTargetId);
 
   // Initialize renderer with singleton engine
   useEffect(() => {
@@ -69,6 +72,11 @@ export const Simulation3DView = memo(function Simulation3DView() {
     rendererRef.current?.setSelectedVehicle(selectedVehicleId);
   }, [selectedVehicleId]);
 
+  // Sync Action Cam target with Three.js renderer
+  useEffect(() => {
+    rendererRef.current?.setActionCamTarget(actionCamTargetId);
+  }, [actionCamTargetId]);
+
   // Rebuild 3D world when scenario changes
   useEffect(() => {
     if (rendererRef.current) {
@@ -93,7 +101,13 @@ export const Simulation3DView = memo(function Simulation3DView() {
     <div className="relative w-full h-full">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
-      {/* Cyberpunk Navigation Overlay Legend */}
+      {/* Cinematic Action Cam & Citations Overlay */}
+      <ActionCamOverlay />
+
+      {/* Interactive Law Enforcement & Tactical Dispatch Dock */}
+      <DispatchDock />
+
+      {/* Navigation Overlay Legend */}
       <div className="absolute bottom-4 left-4 z-10 px-3 py-1.5 rounded bg-surface/80 backdrop-blur border border-outline-variant/60 font-mono text-[11px] text-on-surface-variant flex items-center gap-3 select-none">
         <span className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />

@@ -13,6 +13,9 @@ import {
   triggerTrafficSurge,
   clearAllIncidents,
   getSimulationEngine,
+  setSimulationAlgorithm,
+  spawnPoliceUnits,
+  spawnMotorcycleUnits,
 } from '../services/simulationService';
 
 export function useSimulation() {
@@ -23,7 +26,6 @@ export function useSimulation() {
     scenarios,
     setSelectedScenarioId,
     setScenarios,
-    setSelectedAlgorithm,
     setIsWorkerReady,
   } = useSimulationStore();
 
@@ -66,8 +68,8 @@ export function useSimulation() {
   }, []);
 
   const changeAlgorithm = useCallback((algo: 'dijkstra' | 'astar' | 'dynamic_hld') => {
-    setSelectedAlgorithm(algo);
-  }, [setSelectedAlgorithm]);
+    setSimulationAlgorithm(algo);
+  }, []);
 
   const blockRoad = useCallback((roadId?: string) => {
     blockRoadLane(roadId);
@@ -75,6 +77,14 @@ export function useSimulation() {
 
   const spawnEmergency = useCallback((count = 2) => {
     spawnEmergencyUnits(count);
+  }, []);
+
+  const spawnPolice = useCallback((count = 1) => {
+    spawnPoliceUnits(count);
+  }, []);
+
+  const spawnMotorcycle = useCallback((count = 1) => {
+    spawnMotorcycleUnits(count);
   }, []);
 
   const triggerTrafficSpike = useCallback((multiplier = 2.5, duration = 15) => {
@@ -99,6 +109,8 @@ export function useSimulation() {
     changeAlgorithm,
     blockRoad,
     spawnEmergency,
+    spawnPolice,
+    spawnMotorcycle,
     triggerTrafficSpike,
     clearIncidents,
     scenarios,
