@@ -49,7 +49,23 @@ export class SimulationEngine {
   private trafficSpikeTimer = 0;
   private trafficSpikeMultiplier = 1.0;
 
+  public currentScenario: Scenario | null = null;
+  public activeAlgorithm: 'dijkstra' | 'astar' | 'dynamic_hld' = 'astar';
+  public recentCitations: Array<{
+    id: string;
+    ticketNumber: string;
+    plate: string;
+    violationType: string;
+    fineETB: number;
+    timestamp: number;
+    vehicleId: string;
+    location: string;
+    officerName: string;
+  }> = [];
+  public lastIncidentFocus: { vehicleId: string; type: string; description: string; time: number } | null = null;
+
   load(scenario: Scenario): void {
+    this.currentScenario = scenario;
     this.network.clear();
     this.pedestrians = scenario.pedestrians ?? [];
     resetIds();
@@ -68,6 +84,10 @@ export class SimulationEngine {
 
     this.spawners = scenario.spawners;
     this.spawnTimers = new Array(scenario.spawners.length).fill(0);
+  }
+
+  setAlgorithm(algo: 'dijkstra' | 'astar' | 'dynamic_hld'): void {
+    this.activeAlgorithm = algo;
   }
 
   start(): void { this.running = true; }
@@ -120,7 +140,43 @@ export class SimulationEngine {
 
       const v = createVehicle(VehicleType.Emergency, targetLaneId, lane.roadId, 0, [], this.rng);
       v.desiredSpeed = 22.0; // High speed response
-      v.color = '#ef4444';
+      v.color = '#ffffff';
+      this.network.insertVehicle(v);
+    }
+  }
+
+  /** Law Enforcement Dispatch: spawn police cruiser */
+  spawnPolice(count = 1): void {
+    const roads = this.network.getAllRoads();
+    if (roads.length === 0) return;
+
+    for (let i = 0; i < count; i++) {
+      const spawner = this.spawners[i % this.spawners.length];
+      const targetLaneId = spawner ? spawner.laneId : roads[0]!.lanes[0]!.id;
+      const lane = this.network.getLane(targetLaneId);
+      if (!lane) continue;
+
+      const v = createVehicle(VehicleType.Police, targetLaneId, lane.roadId, 0, [], this.rng);
+      v.desiredSpeed = 24.0; // High speed pursuit/patrol
+      v.color = '#1e293b';
+      this.network.insertVehicle(v);
+    }
+  }
+
+  /** Law Enforcement Dispatch: spawn agile police motorcycle patrol */
+  spawnMotorcyclePatrol(count = 1): void {
+    const roads = this.network.getAllRoads();
+    if (roads.length === 0) return;
+
+    for (let i = 0; i < count; i++) {
+      const spawner = this.spawners[i % this.spawners.length];
+      const targetLaneId = spawner ? spawner.laneId : roads[0]!.lanes[0]!.id;
+      const lane = this.network.getLane(targetLaneId);
+      if (!lane) continue;
+
+      const v = createVehicle(VehicleType.Motorcycle, targetLaneId, lane.roadId, 0, [], this.rng);
+      v.desiredSpeed = 20.0;
+      v.color = '#0284c7';
       this.network.insertVehicle(v);
     }
   }
@@ -134,6 +190,12 @@ export class SimulationEngine {
   /** Clear all active road closures and incidents */
   clearIncidents(): void {
     this.blockedLanes.clear();
+    for (const v of this.network.getAllVehicles()) {
+      v.isCrashed = false;
+      v.isPulledOver = false;
+      v.hasHazardLights = false;
+      if (v.violation) v.violation = undefined;
+    }
   }
 
   /** Called by render loop with actual elapsed wall-clock time (seconds). */
@@ -174,18 +236,131 @@ export class SimulationEngine {
     }
 
     // 4. Calculate accelerations (IDM)
-    for (const v of all) this.calcAccel(v, dt);
+    for (const v of all) {
+      if (v.isPulledOver || v.isCrashed) {
+        v.acceleration = -6;
+        v.speed = 0;
+      } else {
+        this.calcAccel(v, dt);
+      }
+    }
+
+    // 4.2. Emergency & Police Siren Preemption Yielding
+    for (const v of all) {
+      if (v.type === VehicleType.Emergency || v.type === VehicleType.Police) {
+        const leader = this.network.getLeader(v);
+        if (leader && leader.type !== VehicleType.Emergency && leader.type !== VehicleType.Police) {
+          const gap = leader.position - v.position;
+          if (gap < 30 && gap > 0) {
+            // Leader slows down and yields to shoulder
+            leader.speed = Math.max(1.5, leader.speed * 0.7);
+          }
+        }
+      }
+    }
+
+    // 4.4. Speed Violation Detection
+    for (const v of all) {
+      if (v.type !== VehicleType.Emergency && v.type !== VehicleType.Police && !v.violation && !v.isPulledOver && !v.isCrashed) {
+        const lane = this.network.getLane(v.laneId);
+        if (lane && v.speed > lane.speedLimit * 1.25 && v.personality === 'aggressive') {
+          v.violation = {
+            type: 'speeding',
+            fine: 1500,
+            ticketIssued: false,
+            timestamp: this.simTime,
+          };
+          this.lastIncidentFocus = {
+            vehicleId: v.id,
+            type: 'speeding',
+            description: `Aggressive Speeding: ${Math.round(v.speed * 3.6)} km/h in ${Math.round(lane.speedLimit * 3.6)} zone`,
+            time: this.simTime,
+          };
+        }
+      }
+    }
 
     // 4.5. MOBIL Lane changing
     for (const v of all) {
-      if (this.rng() < dt * 2.0) { // ~2 chances per second
+      if (!v.isPulledOver && !v.isCrashed && this.rng() < dt * 2.0) { // ~2 chances per second
         this.tryLaneChange(v);
+      }
+    }
+
+    // 4.6. Crash & Fender-Bender Physics
+    for (const v of all) {
+      if (!v.isCrashed && v.speed > 6.0) {
+        const leader = this.network.getLeader(v);
+        if (leader && !leader.isCrashed) {
+          const gap = leader.position - v.position - (leader.length / 2) - (v.length / 2);
+          if (gap < 0.25 && (v.speed - leader.speed) > 4.5) {
+            v.isCrashed = true;
+            leader.isCrashed = true;
+            v.speed = 0;
+            leader.speed = 0;
+            v.hasHazardLights = true;
+            leader.hasHazardLights = true;
+            v.violation = {
+              type: 'crash',
+              fine: 5000,
+              ticketIssued: false,
+              timestamp: this.simTime,
+            };
+            this.lastIncidentFocus = {
+              vehicleId: v.id,
+              type: 'crash',
+              description: `Collision: ${v.licensePlate || v.id} rear-ended ${leader.licensePlate || leader.id}`,
+              time: this.simTime,
+            };
+          }
+        }
+      }
+    }
+
+    // 4.7. Traffic Officer Pull-Over & Ticket Issuing
+    for (const v of all) {
+      if (v.violation && !v.violation.ticketIssued && !v.isPulledOver && !v.isCrashed) {
+        v.isPulledOver = true;
+        v.pullOverTimer = 10; // 10s ticketing stop
+        v.hasHazardLights = true;
+        v.speed = 0;
+        v.violation.ticketIssued = true;
+
+        const ticketNumber = `TKT-${Math.floor(10000 + this.rng() * 90000)}`;
+        const officers = ['Officer Bekele', 'Officer Desta', 'Officer Almaz', 'Traffic Patrol #4'];
+        const citation = {
+          id: `cit-${Date.now()}-${v.id}`,
+          ticketNumber,
+          plate: v.licensePlate || `ET-3-A${Math.floor(100 + this.rng() * 900)}`,
+          violationType: v.violation.type,
+          fineETB: v.violation.fine,
+          timestamp: Date.now(),
+          vehicleId: v.id,
+          location: v.roadId,
+          officerName: officers[Math.floor(this.rng() * officers.length)]!,
+        };
+        this.recentCitations.unshift(citation);
+        if (this.recentCitations.length > 25) this.recentCitations.pop();
+      }
+
+      if (v.isPulledOver && v.pullOverTimer !== undefined) {
+        v.pullOverTimer -= dt;
+        v.speed = 0;
+        if (v.pullOverTimer <= 0) {
+          v.isPulledOver = false;
+          v.hasHazardLights = false;
+          v.desiredSpeed = Math.max(8, v.desiredSpeed * 0.85); // Drives moderately
+        }
       }
     }
 
     // 5. Integrate & move
     const removed: VehicleState[] = [];
     for (const v of all) {
+      if (v.isPulledOver || v.isCrashed) {
+        v.speed = 0;
+        continue;
+      }
       v.speed = Math.max(0, v.speed + v.acceleration * dt);
       v.position += v.speed * dt;
       
@@ -284,10 +459,26 @@ export class SimulationEngine {
     const road = this.network.getRoad(lane.roadId);
     if (road?.endIntersectionId) {
       const ix = this.network.getIntersection(road.endIntersectionId);
-      if (ix && this.traffic.lightState(ix, v.laneId) !== LightState.Green && v.type !== VehicleType.Emergency) {
-        v.position = lane.length;
-        v.speed = 0;
-        return true;
+      if (ix && this.traffic.lightState(ix, v.laneId) !== LightState.Green && v.type !== VehicleType.Emergency && v.type !== VehicleType.Police) {
+        // Aggressive drivers have a 12% chance to run red light if speed > 5 m/s
+        if (v.personality === 'aggressive' && v.speed > 5.0 && this.rng() < 0.12 && !v.violation) {
+          v.violation = {
+            type: 'red_light',
+            fine: 2500,
+            ticketIssued: false,
+            timestamp: this.simTime,
+          };
+          this.lastIncidentFocus = {
+            vehicleId: v.id,
+            type: 'red_light',
+            description: `Red Light Violation: ${v.licensePlate || v.id} ran red signal at intersection`,
+            time: this.simTime,
+          };
+        } else {
+          v.position = lane.length;
+          v.speed = 0;
+          return true;
+        }
       }
     }
 
@@ -295,9 +486,7 @@ export class SimulationEngine {
     const openConnections = lane.connections.filter(c => !this.blockedLanes.has(c.toLaneId));
     const viableConnections = openConnections.length > 0 ? openConnections : lane.connections;
 
-    const conn = viableConnections.length > 1 
-      ? viableConnections[Math.floor(this.rng() * viableConnections.length)]! 
-      : viableConnections[0]!;
+    const conn = this.selectDownstreamConnection(v, lane, viableConnections);
 
     const targetLane = this.network.getLane(conn.toLaneId);
     if (!targetLane) return false;
@@ -319,6 +508,67 @@ export class SimulationEngine {
     
     this.network.insertVehicle(v);
     return true;
+  }
+
+  private selectDownstreamConnection(_v: VehicleState, _lane: any, connections: any[]): any {
+    if (connections.length <= 1) return connections[0]!;
+
+    if (this.activeAlgorithm === 'dijkstra') {
+      // 1. Dijkstra: Static shortest physical distance — ignores congestion and blockages
+      let bestConn = connections[0]!;
+      let minDistance = Infinity;
+      for (const conn of connections) {
+        const targetLane = this.network.getLane(conn.toLaneId);
+        if (targetLane) {
+          const dist = targetLane.length;
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestConn = conn;
+          }
+        }
+      }
+      return bestConn;
+    } else if (this.activeAlgorithm === 'astar') {
+      // 2. A*: Coordinate goal-directed search prioritizing express arteries
+      let bestConn = connections[0]!;
+      let bestScore = -Infinity;
+      for (const conn of connections) {
+        const targetLane = this.network.getLane(conn.toLaneId);
+        if (targetLane) {
+          const turnMultiplier = conn.turnType === 'straight' ? 1.3 : 0.9;
+          const score = targetLane.speedLimit * turnMultiplier;
+          if (score > bestScore) {
+            bestScore = score;
+            bestConn = conn;
+          }
+        }
+      }
+      return bestConn;
+    } else {
+      // 3. Dynamic Adaptive Rerouting (BPR flow penalty + hazard avoidance)
+      let bestConn = connections[0]!;
+      let minCost = Infinity;
+      for (const conn of connections) {
+        const targetLane = this.network.getLane(conn.toLaneId);
+        if (targetLane) {
+          const vehCount = this.network.laneVehicles(targetLane.id).length;
+          const capacity = Math.max(1, Math.floor(targetLane.length / 8));
+          const isBlocked = this.blockedLanes.has(targetLane.id);
+          const hasCrashedVehicle = this.network.laneVehicles(targetLane.id).some(veh => veh.isCrashed);
+          
+          const freeTime = targetLane.length / Math.max(5, targetLane.speedLimit);
+          const congestionMultiplier = 1 + 0.25 * Math.pow(vehCount / capacity, 3);
+          const hazardPenalty = isBlocked ? 1000 : hasCrashedVehicle ? 500 : 0;
+          
+          const cost = (freeTime * congestionMultiplier) + hazardPenalty;
+          if (cost < minCost) {
+            minCost = cost;
+            bestConn = conn;
+          }
+        }
+      }
+      return bestConn;
+    }
   }
 
   private processSpawners(dt: number): void {
@@ -402,6 +652,9 @@ export class SimulationEngine {
         emergencyResponseTime: 4.2,
       },
       blockedLanes: Array.from(this.blockedLanes),
+      citations: this.recentCitations,
+      lastIncident: this.lastIncidentFocus,
+      activeAlgorithm: this.activeAlgorithm,
     };
   }
 

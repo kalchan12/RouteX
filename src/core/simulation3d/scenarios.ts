@@ -88,17 +88,19 @@ export function createAstuScenario(): Scenario {
   };
 
   const spawners: VehicleSpawner[] = [
-    { laneId: 'e-in-0', rate: 18, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.9 }, { type: VehicleType.Truck, weight: 0.1 }] },
-    { laneId: 'e-in-1', rate: 12, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 'w-in-0', rate: 16, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Bus, weight: 0.2 }] },
-    { laneId: 'w-in-1', rate: 10, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 'n-in', rate: 10, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 's-in', rate: 10, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Truck, weight: 0.2 }] },
+    { laneId: 'e-in-0', rate: 18, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Bajaj, weight: 0.2 }, { type: VehicleType.Motorcycle, weight: 0.1 }] },
+    { laneId: 'e-in-1', rate: 12, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.6 }, { type: VehicleType.Bus, weight: 0.3 }, { type: VehicleType.Police, weight: 0.1 }] },
+    { laneId: 'w-in-0', rate: 16, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Truck, weight: 0.2 }] },
+    { laneId: 'w-in-1', rate: 10, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.7 }, { type: VehicleType.Bajaj, weight: 0.3 }] },
+    { laneId: 'n-in', rate: 10, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.6 }, { type: VehicleType.Motorcycle, weight: 0.3 }, { type: VehicleType.Police, weight: 0.1 }] },
+    { laneId: 's-in', rate: 10, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Truck, weight: 0.2 }] },
   ];
 
   const pedestrians: PedestrianState[] = [
     { id: 'p1', position: { x: -10, y: -10 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.2, destination: { x: 10, y: 10 } },
     { id: 'p2', position: { x: 10, y: -10 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.5, destination: { x: -10, y: 10 } },
+    { id: 'p3', position: { x: -15, y: 12 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.1, destination: { x: 15, y: -12 } },
+    { id: 'p4', position: { x: 12, y: 15 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.3, destination: { x: -12, y: -15 } },
   ];
 
   return {
@@ -108,6 +110,18 @@ export function createAstuScenario(): Scenario {
     intersections: [ix],
     spawners,
     pedestrians,
+    environment: {
+      groundColor: '#2d6a4f',
+      grassColor: '#40916c',
+      skyColor: '#70c4ff',
+      fogColor: '#bde0fe',
+      fogDensity: 0.007,
+      sunColor: '#fffbeb',
+      sunIntensity: 1.6,
+      sunPosition: [50, 100, -30],
+      landmarkType: 'university',
+      weatherName: 'Midday Campus Clear',
+    },
     seed: 42,
   };
 }
@@ -177,12 +191,12 @@ export function createExpresswayScenario(): Scenario {
   };
 
   const spawners: VehicleSpawner[] = [
-    { laneId: 'exp-e-in-0', rate: 35, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Truck, weight: 0.2 }] },
-    { laneId: 'exp-e-in-1', rate: 40, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.7 }, { type: VehicleType.Bus, weight: 0.3 }] },
-    { laneId: 'exp-e-in-2', rate: 25, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.8 }, { type: VehicleType.Car, weight: 0.2 }] },
-    { laneId: 'exp-w-in-0', rate: 30, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.9 }, { type: VehicleType.Bus, weight: 0.1 }] },
-    { laneId: 'exp-w-in-1', rate: 35, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.7 }, { type: VehicleType.Truck, weight: 0.3 }] },
-    { laneId: 'exp-ramp-in', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.6 }, { type: VehicleType.Truck, weight: 0.4 }] },
+    { laneId: 'exp-e-in-0', rate: 35, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Truck, weight: 0.2 }] },
+    { laneId: 'exp-e-in-1', rate: 40, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Bus, weight: 0.3 }, { type: VehicleType.Police, weight: 0.2 }] },
+    { laneId: 'exp-e-in-2', rate: 25, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.7 }, { type: VehicleType.Car, weight: 0.3 }] },
+    { laneId: 'exp-w-in-0', rate: 30, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.6 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Police, weight: 0.1 }] },
+    { laneId: 'exp-w-in-1', rate: 35, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Truck, weight: 0.3 }, { type: VehicleType.Bus, weight: 0.2 }] },
+    { laneId: 'exp-ramp-in', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Truck, weight: 0.3 }, { type: VehicleType.Motorcycle, weight: 0.2 }] },
   ];
 
   return {
@@ -191,6 +205,18 @@ export function createExpresswayScenario(): Scenario {
     roads,
     intersections: [ix],
     spawners,
+    environment: {
+      groundColor: '#78716c',
+      grassColor: '#84cc16',
+      skyColor: '#fdba74',
+      fogColor: '#ffedd5',
+      fogDensity: 0.008,
+      sunColor: '#ea580c',
+      sunIntensity: 1.8,
+      sunPosition: [-80, 50, 60],
+      landmarkType: 'toll_plaza',
+      weatherName: 'Golden Sunset Express',
+    },
     seed: 99,
   };
 }
@@ -273,10 +299,10 @@ export function createPostaBetScenario(): Scenario {
   };
 
   const spawners: VehicleSpawner[] = [
-    { laneId: 'pb-e-in', rate: 26, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Bus, weight: 0.2 }] },
-    { laneId: 'pb-w-in', rate: 24, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.7 }, { type: VehicleType.Truck, weight: 0.3 }] },
-    { laneId: 'pb-n-in', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.9 }, { type: VehicleType.Bus, weight: 0.1 }] },
-    { laneId: 'pb-s-in', rate: 22, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Truck, weight: 0.2 }] },
+    { laneId: 'pb-e-in', rate: 26, routes: [], typeWeights: [{ type: VehicleType.MinibusTaxi, weight: 0.35 }, { type: VehicleType.Bajaj, weight: 0.3 }, { type: VehicleType.Car, weight: 0.25 }, { type: VehicleType.Motorcycle, weight: 0.1 }] },
+    { laneId: 'pb-w-in', rate: 24, routes: [], typeWeights: [{ type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Car, weight: 0.3 }, { type: VehicleType.Bajaj, weight: 0.25 }, { type: VehicleType.Police, weight: 0.15 }] },
+    { laneId: 'pb-n-in', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Motorcycle, weight: 0.2 }, { type: VehicleType.Bus, weight: 0.1 }] },
+    { laneId: 'pb-s-in', rate: 22, routes: [], typeWeights: [{ type: VehicleType.Bajaj, weight: 0.35 }, { type: VehicleType.Car, weight: 0.35 }, { type: VehicleType.MinibusTaxi, weight: 0.2 }, { type: VehicleType.Police, weight: 0.1 }] },
   ];
 
   return {
@@ -285,6 +311,18 @@ export function createPostaBetScenario(): Scenario {
     roads,
     intersections: [ix],
     spawners,
+    environment: {
+      groundColor: '#1e293b',
+      grassColor: '#0284c7',
+      skyColor: '#0f172a',
+      fogColor: '#020617',
+      fogDensity: 0.012,
+      sunColor: '#38bdf8',
+      sunIntensity: 1.3,
+      sunPosition: [30, 80, 30],
+      landmarkType: 'monument_rotary',
+      weatherName: 'City Center Twilight',
+    },
     seed: 101,
   };
 }
@@ -355,10 +393,10 @@ export function createHospitalScenario(): Scenario {
   };
 
   const spawners: VehicleSpawner[] = [
-    { laneId: 'h-emerg-in', rate: 25, routes: [], typeWeights: [{ type: VehicleType.Emergency, weight: 0.8 }, { type: VehicleType.Car, weight: 0.2 }] },
-    { laneId: 'h-e-in-0', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Emergency, weight: 0.2 }] },
-    { laneId: 'h-e-in-1', rate: 15, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 'h-w-in-0', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.9 }, { type: VehicleType.Emergency, weight: 0.1 }] },
+    { laneId: 'h-emerg-in', rate: 25, routes: [], typeWeights: [{ type: VehicleType.Emergency, weight: 0.6 }, { type: VehicleType.Police, weight: 0.2 }, { type: VehicleType.Car, weight: 0.2 }] },
+    { laneId: 'h-e-in-0', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Emergency, weight: 0.2 }] },
+    { laneId: 'h-e-in-1', rate: 15, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.6 }, { type: VehicleType.Motorcycle, weight: 0.2 }, { type: VehicleType.Police, weight: 0.2 }] },
+    { laneId: 'h-w-in-0', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Emergency, weight: 0.2 }] },
   ];
 
   return {
@@ -367,6 +405,18 @@ export function createHospitalScenario(): Scenario {
     roads,
     intersections: [ix],
     spawners,
+    environment: {
+      groundColor: '#334155',
+      grassColor: '#22c55e',
+      skyColor: '#93c5fd',
+      fogColor: '#e0f2fe',
+      fogDensity: 0.006,
+      sunColor: '#ffffff',
+      sunIntensity: 1.6,
+      sunPosition: [40, 110, -40],
+      landmarkType: 'hospital_bay',
+      weatherName: 'Clinical Emergency Daylight',
+    },
     seed: 202,
   };
 }
@@ -419,9 +469,9 @@ export function createWonjiScenario(): Scenario {
   };
 
   const spawners: VehicleSpawner[] = [
-    { laneId: 'w-main-in-0', rate: 25, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.8 }, { type: VehicleType.Car, weight: 0.2 }] },
-    { laneId: 'w-main-in-1', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.6 }, { type: VehicleType.Car, weight: 0.4 }] },
-    { laneId: 'w-detour-in', rate: 15, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.7 }, { type: VehicleType.Truck, weight: 0.3 }] },
+    { laneId: 'w-main-in-0', rate: 25, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.6 }, { type: VehicleType.MinibusTaxi, weight: 0.2 }, { type: VehicleType.Car, weight: 0.2 }] },
+    { laneId: 'w-main-in-1', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.5 }, { type: VehicleType.Car, weight: 0.3 }, { type: VehicleType.Police, weight: 0.2 }] },
+    { laneId: 'w-detour-in', rate: 15, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Truck, weight: 0.3 }, { type: VehicleType.Motorcycle, weight: 0.2 }] },
   ];
 
   return {
@@ -430,6 +480,18 @@ export function createWonjiScenario(): Scenario {
     roads,
     intersections: [ix],
     spawners,
+    environment: {
+      groundColor: '#78350f',
+      grassColor: '#b45309',
+      skyColor: '#a8a29e',
+      fogColor: '#78716c',
+      fogDensity: 0.015,
+      sunColor: '#d97706',
+      sunIntensity: 1.4,
+      sunPosition: [30, 60, -50],
+      landmarkType: 'industrial_silos',
+      weatherName: 'Industrial Dust Haze',
+    },
     seed: 303,
   };
 }
@@ -441,12 +503,12 @@ export function createAbaGedaScenario(): Scenario {
   base.description = 'Dense retail and market district with heavy pedestrian crossings and high delivery van activity.';
   base.seed = 404;
   base.spawners = [
-    { laneId: 'e-in-0', rate: 22, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.7 }, { type: VehicleType.Bus, weight: 0.3 }] },
-    { laneId: 'e-in-1', rate: 18, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 'w-in-0', rate: 22, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Truck, weight: 0.2 }] },
-    { laneId: 'w-in-1', rate: 15, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 'n-in', rate: 16, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.9 }, { type: VehicleType.Bus, weight: 0.1 }] },
-    { laneId: 's-in', rate: 16, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Truck, weight: 0.2 }] },
+    { laneId: 'e-in-0', rate: 22, routes: [], typeWeights: [{ type: VehicleType.Bajaj, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Car, weight: 0.2 }, { type: VehicleType.Motorcycle, weight: 0.1 }] },
+    { laneId: 'e-in-1', rate: 18, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Bajaj, weight: 0.3 }, { type: VehicleType.Police, weight: 0.2 }] },
+    { laneId: 'w-in-0', rate: 22, routes: [], typeWeights: [{ type: VehicleType.MinibusTaxi, weight: 0.4 }, { type: VehicleType.Bajaj, weight: 0.3 }, { type: VehicleType.Car, weight: 0.3 }] },
+    { laneId: 'w-in-1', rate: 15, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Motorcycle, weight: 0.3 }, { type: VehicleType.Bajaj, weight: 0.2 }] },
+    { laneId: 'n-in', rate: 16, routes: [], typeWeights: [{ type: VehicleType.Bajaj, weight: 0.4 }, { type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.2 }] },
+    { laneId: 's-in', rate: 16, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Truck, weight: 0.3 }] },
   ];
   base.pedestrians = [
     { id: 'p1', position: { x: -15, y: -15 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.1, destination: { x: 15, y: 15 } },
@@ -454,7 +516,20 @@ export function createAbaGedaScenario(): Scenario {
     { id: 'p3', position: { x: -20, y: 10 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.0, destination: { x: 20, y: -10 } },
     { id: 'p4', position: { x: 10, y: 20 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.2, destination: { x: -10, y: -20 } },
     { id: 'p5', position: { x: -12, y: 5 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.4, destination: { x: 12, y: -5 } },
+    { id: 'p6', position: { x: 5, y: -18 }, velocity: { x: 0, y: 0 }, radius: 0.3, desiredSpeed: 1.1, destination: { x: -5, y: 18 } },
   ];
+  base.environment = {
+    groundColor: '#44403c',
+    grassColor: '#16a34a',
+    skyColor: '#fef08a',
+    fogColor: '#fef9c3',
+    fogDensity: 0.008,
+    sunColor: '#ca8a04',
+    sunIntensity: 1.7,
+    sunPosition: [60, 90, 40],
+    landmarkType: 'market_stalls',
+    weatherName: 'Warm Commercial Afternoon',
+  };
   return base;
 }
 
@@ -465,13 +540,25 @@ export function createFrancoScenario(): Scenario {
   base.description = 'Railway terminal transit hub featuring dedicated high-capacity bus logistics and freight lines.';
   base.seed = 505;
   base.spawners = [
-    { laneId: 'e-in-0', rate: 30, routes: [], typeWeights: [{ type: VehicleType.Bus, weight: 0.6 }, { type: VehicleType.Car, weight: 0.4 }] },
-    { laneId: 'e-in-1', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 'w-in-0', rate: 28, routes: [], typeWeights: [{ type: VehicleType.Bus, weight: 0.5 }, { type: VehicleType.Truck, weight: 0.5 }] },
-    { laneId: 'w-in-1', rate: 18, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: 'n-in', rate: 14, routes: [], typeWeights: [{ type: VehicleType.Bus, weight: 0.4 }, { type: VehicleType.Car, weight: 0.6 }] },
-    { laneId: 's-in', rate: 14, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.5 }, { type: VehicleType.Car, weight: 0.5 }] },
+    { laneId: 'e-in-0', rate: 30, routes: [], typeWeights: [{ type: VehicleType.Bus, weight: 0.5 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Car, weight: 0.2 }] },
+    { laneId: 'e-in-1', rate: 20, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Truck, weight: 0.3 }, { type: VehicleType.Police, weight: 0.2 }] },
+    { laneId: 'w-in-0', rate: 28, routes: [], typeWeights: [{ type: VehicleType.Bus, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Truck, weight: 0.3 }] },
+    { laneId: 'w-in-1', rate: 18, routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.6 }, { type: VehicleType.Motorcycle, weight: 0.4 }] },
+    { laneId: 'n-in', rate: 14, routes: [], typeWeights: [{ type: VehicleType.Bus, weight: 0.4 }, { type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.2 }] },
+    { laneId: 's-in', rate: 14, routes: [], typeWeights: [{ type: VehicleType.Truck, weight: 0.5 }, { type: VehicleType.Car, weight: 0.3 }, { type: VehicleType.Police, weight: 0.2 }] },
   ];
+  base.environment = {
+    groundColor: '#18181b',
+    grassColor: '#65a30d',
+    skyColor: '#cbd5e1',
+    fogColor: '#94a3b8',
+    fogDensity: 0.01,
+    sunColor: '#fde047',
+    sunIntensity: 1.5,
+    sunPosition: [-50, 80, -30],
+    landmarkType: 'transit_depot',
+    weatherName: 'Transit Hub Dawn',
+  };
   return base;
 }
 
@@ -558,10 +645,10 @@ export function createRandomScenario(customSeed?: number): Scenario {
   };
 
   const spawners: VehicleSpawner[] = [
-    { laneId: eInLanes[0]!.id, rate: Math.floor(15 + rnd() * 25), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Truck, weight: 0.2 }] },
-    { laneId: wInLanes[0]!.id, rate: Math.floor(15 + rnd() * 25), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.7 }, { type: VehicleType.Bus, weight: 0.3 }] },
-    { laneId: nIn.id, rate: Math.floor(8 + rnd() * 15), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 1.0 }] },
-    { laneId: sIn.id, rate: Math.floor(8 + rnd() * 15), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.8 }, { type: VehicleType.Emergency, weight: 0.2 }] },
+    { laneId: eInLanes[0]!.id, rate: Math.floor(15 + rnd() * 25), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }, { type: VehicleType.Truck, weight: 0.2 }, { type: VehicleType.Police, weight: 0.1 }] },
+    { laneId: wInLanes[0]!.id, rate: Math.floor(15 + rnd() * 25), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.Bajaj, weight: 0.3 }, { type: VehicleType.Bus, weight: 0.2 }, { type: VehicleType.Motorcycle, weight: 0.1 }] },
+    { laneId: nIn.id, rate: Math.floor(8 + rnd() * 15), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.5 }, { type: VehicleType.Motorcycle, weight: 0.3 }, { type: VehicleType.Police, weight: 0.2 }] },
+    { laneId: sIn.id, rate: Math.floor(8 + rnd() * 15), routes: [], typeWeights: [{ type: VehicleType.Car, weight: 0.4 }, { type: VehicleType.Emergency, weight: 0.3 }, { type: VehicleType.MinibusTaxi, weight: 0.3 }] },
   ];
 
   return {
@@ -570,6 +657,18 @@ export function createRandomScenario(customSeed?: number): Scenario {
     roads,
     intersections: [ix],
     spawners,
+    environment: {
+      groundColor: '#0b0f19',
+      grassColor: '#06b6d4',
+      skyColor: '#3b0764',
+      fogColor: '#1e1b4b',
+      fogDensity: 0.012,
+      sunColor: '#e879f9',
+      sunIntensity: 1.6,
+      sunPosition: [0, 80, 0],
+      landmarkType: 'cyber_grid',
+      weatherName: 'Procedural Cyber Sector',
+    },
     seed,
   };
 }

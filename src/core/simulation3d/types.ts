@@ -13,11 +13,17 @@ export interface Vec2 {
 // ─── Vehicle ───────────────────────────────────────────────
 
 export enum VehicleType {
-  Car       = 'car',
-  Truck     = 'truck',
-  Bus       = 'bus',
-  Emergency = 'emergency',
+  Car          = 'car',
+  Truck        = 'truck',
+  Bus          = 'bus',
+  Emergency    = 'emergency',
+  Police       = 'police',
+  Motorcycle   = 'motorcycle',
+  Bajaj        = 'bajaj',
+  MinibusTaxi  = 'minibus_taxi',
 }
+
+export type DriverPersonality = 'aggressive' | 'normal' | 'cautious';
 
 export interface VehicleState {
   id: string;
@@ -41,6 +47,21 @@ export interface VehicleState {
   /** Snapshot for render interpolation */
   prevPosition: number;
   prevSpeed: number;
+
+  /** Advanced driver personality & rule compliance */
+  personality?: DriverPersonality;
+  isPulledOver?: boolean;
+  pullOverTimer?: number;
+  isCrashed?: boolean;
+  isViolator?: boolean;
+  hasHazardLights?: boolean;
+  licensePlate?: string;
+  violation?: {
+    type: 'speeding' | 'red_light' | 'crash' | 'illegal_lane';
+    fine: number;
+    ticketIssued: boolean;
+    timestamp: number;
+  };
 }
 
 export interface IDMParams {
@@ -123,6 +144,20 @@ export interface VehicleSpawner {
   typeWeights: { type: VehicleType; weight: number }[];
 }
 
+export interface EnvironmentTheme {
+  groundColor: string;
+  grassColor: string;
+  skyColor: string;
+  fogColor: string;
+  fogDensity: number;
+  sunColor: string;
+  sunIntensity: number;
+  sunPosition: [number, number, number];
+  landmarkType: 'university' | 'toll_plaza' | 'monument_rotary' | 'hospital_bay' | 'industrial_silos' | 'market_stalls' | 'transit_depot' | 'cyber_grid';
+  weatherName: string;
+  vegetationDensity?: number;
+}
+
 export interface Scenario {
   name: string;
   description: string;
@@ -130,6 +165,7 @@ export interface Scenario {
   intersections: Intersection[];
   spawners: VehicleSpawner[];
   pedestrians?: PedestrianState[];
+  environment?: EnvironmentTheme;
   seed: number;
 }
 
@@ -176,6 +212,9 @@ export interface SimulationSnapshot {
     edges: Array<{ id: string; source: string; destination: string; lanes?: number; speedLimit?: number }>;
   };
   blockedLanes?: string[];
+  citations?: any[];
+  lastIncident?: { vehicleId: string; type: string; description: string; time: number } | null;
+  activeAlgorithm?: string;
 }
 
 // ─── Pedestrians ───────────────────────────────────────────

@@ -11,6 +11,10 @@ export const GAP_PARAMS: Record<VehicleType, { criticalGap: number; followUp: nu
   [VehicleType.Truck]: { criticalGap: 6.5, followUp: 3.5 },
   [VehicleType.Bus]: { criticalGap: 6.0, followUp: 3.0 },
   [VehicleType.Emergency]: { criticalGap: 2.5, followUp: 1.5 },
+  [VehicleType.Police]: { criticalGap: 2.5, followUp: 1.5 },
+  [VehicleType.Motorcycle]: { criticalGap: 3.0, followUp: 1.8 },
+  [VehicleType.Bajaj]: { criticalGap: 4.0, followUp: 2.2 },
+  [VehicleType.MinibusTaxi]: { criticalGap: 4.2, followUp: 2.4 },
 };
 
 export function canSafelyTurn(

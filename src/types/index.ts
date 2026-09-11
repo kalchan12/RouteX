@@ -65,6 +65,10 @@ export enum VehicleType {
   EMERGENCY = 'emergency',
   BUS = 'bus',
   TRUCK = 'truck',
+  POLICE = 'police',
+  MOTORCYCLE = 'motorcycle',
+  BAJAJ = 'bajaj',
+  MINIBUS = 'minibus',
 }
 
 export enum VehicleState {
@@ -183,6 +187,22 @@ export interface SimulationSnapshot {
     totalWaitingTime: number;
     emergencyResponseTime: number | null;
   };
+  citations?: Array<{
+    id: string;
+    vehicleId: string;
+    plateNumber: string;
+    violationType: string;
+    fineAmountETB: number;
+    officer: string;
+    timestamp: number;
+  }>;
+  lastIncident?: {
+    type: 'accident' | 'violation' | 'roadblock';
+    vehicleId: string;
+    description: string;
+    timestamp: number;
+  } | null;
+  activeAlgorithm?: 'dijkstra' | 'astar' | 'dynamic_hld';
 }
 
 export interface SimulationConfig {
