@@ -18,7 +18,7 @@ export const ViewportContainer: React.FC = () => {
   }, [setViewMode, status]);
 
   const isMapActive = simulationMode === 'dashboard' && viewMode === 'map';
-  const isIncidentActive = (simulationMode === 'simulation' || simulationMode === 'transitioning_out') && activeIncident !== null;
+  const isIncidentActive = activeIncident !== null && viewMode === 'simulation';
 
   return (
     <div className="flex-1 relative w-full h-full overflow-hidden">
@@ -48,7 +48,7 @@ export const ViewportContainer: React.FC = () => {
 
       {/* Incident Tactical Response Overlay */}
       {isIncidentActive && (
-        <div className="absolute inset-0 w-full h-full z-20 pointer-events-auto">
+        <div className="absolute inset-0 w-full h-full z-20 pointer-events-none">
           <IncidentSimulationView incident={activeIncident} snapshot={snapshot} />
         </div>
       )}

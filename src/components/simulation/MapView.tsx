@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import L from 'leaflet';
 import { useSimulationStore } from '../../stores';
 import { IncidentType, IncidentSeverity } from '../../types';
+import { 
+  loadSimulationScenario, 
+  startSimulation, 
+  blockRoadLane, 
+  spawnEmergencyUnits 
+} from '../../services/simulationService';
 
 interface MapViewProps {
   onSelectRegion: (scenarioId: string, regionName: string) => void;
@@ -25,7 +31,7 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
     scenarioId: 'normal',
     name: 'ASTU Tech Hub',
     category: 'Science & Tech University',
-    status: 'Autonomous Pilot Zone',
+    status: 'Autonomous Arterial Grid',
     color: 'primary',
     icon: 'school',
     lat: 8.5638,
@@ -36,7 +42,7 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
     scenarioId: 'rush_hour',
     name: 'Addis-Adama Toll Gate',
     category: 'Expressway Ingress',
-    status: 'Freight Flow: Heavy',
+    status: 'High-Speed 3-Lane Corridor',
     color: 'secondary',
     icon: 'toll',
     lat: 8.5620,
@@ -44,10 +50,10 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
   },
   {
     id: 'posta_bet',
-    scenarioId: 'accident',
+    scenarioId: 'posta_bet',
     name: 'Posta Bet Roundabout',
     category: 'City Center Hub',
-    status: 'Gridlock Risk: High',
+    status: 'Circular Rotary Weave',
     color: 'tertiary',
     icon: 'traffic',
     lat: 8.5415,
@@ -55,10 +61,10 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
   },
   {
     id: 'hospital',
-    scenarioId: 'emergency',
+    scenarioId: 'hospital',
     name: 'Adama General Hospital',
     category: 'Medical Center',
-    status: 'Emergency Corridor',
+    status: 'Emergency Trauma Spur',
     color: 'pink',
     icon: 'local_hospital',
     lat: 8.5320,
@@ -66,10 +72,10 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
   },
   {
     id: 'wonji',
-    scenarioId: 'road_closure',
+    scenarioId: 'wonji',
     name: 'Wonji Freight Corridor',
     category: 'Industrial South',
-    status: 'Detour Active',
+    status: 'Bridge Closure Detour Bypass',
     color: 'error',
     icon: 'factory',
     lat: 8.5080,
@@ -77,10 +83,10 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
   },
   {
     id: 'geda_plaza',
-    scenarioId: 'normal',
+    scenarioId: 'geda_plaza',
     name: 'Aba Geda Commercial Plaza',
     category: 'Commercial Hub',
-    status: 'Flow: Optimal',
+    status: 'Pedestrian Crosswalk District',
     color: 'primary',
     icon: 'storefront',
     lat: 8.5480,
@@ -88,14 +94,25 @@ const ADAMA_CHECKPOINTS: AdamaCheckpoint[] = [
   },
   {
     id: 'franco',
-    scenarioId: 'rush_hour',
+    scenarioId: 'franco',
     name: 'Franco Transit Depot',
-    category: 'Railway Junction',
-    status: 'Multimodal Transit',
+    category: 'Railway & BRT Junction',
+    status: 'Dedicated Bus Rapid Transit',
     color: 'secondary',
     icon: 'train',
     lat: 8.5360,
     lng: 39.2850,
+  },
+  {
+    id: 'random',
+    scenarioId: 'random',
+    name: 'Procedural Cyber Sector',
+    category: 'Dynamic Seeded Mesh',
+    status: 'Procedural Generative Topology',
+    color: 'tertiary',
+    icon: 'shuffle',
+    lat: 8.5550,
+    lng: 39.2650,
   },
 ];
 
@@ -106,11 +123,12 @@ const ACTIVE_INCIDENTS = [
     severity: IncidentSeverity.SEVERE,
     lat: 8.5415,
     lng: 39.2705,
-    description: 'Multi-vehicle collision',
+    scenarioId: 'posta_bet',
+    description: 'Multi-vehicle collision at Posta Bet',
     reportedAt: Date.now() - 1000 * 60 * 15,
     assignedUnits: ['Unit-4', 'Ambulance-1'],
     roadId: null,
-    estimatedClearanceMinutes: 45
+    estimatedClearanceMinutes: 45,
   },
   {
     id: 'inc-2',
@@ -118,24 +136,52 @@ const ACTIVE_INCIDENTS = [
     severity: IncidentSeverity.MODERATE,
     lat: 8.5080,
     lng: 39.2820,
+    scenarioId: 'wonji',
     description: 'Road closure: bridge maintenance',
     reportedAt: Date.now() - 1000 * 60 * 120,
     assignedUnits: ['Eng-Crew-B'],
     roadId: null,
-    estimatedClearanceMinutes: 180
+    estimatedClearanceMinutes: 180,
   },
   {
     id: 'inc-3',
     type: IncidentType.ACCIDENT,
     severity: IncidentSeverity.CRITICAL,
-    lat: 8.5638,
-    lng: 39.2905,
-    description: 'Emergency: medical response needed',
+    lat: 8.5320,
+    lng: 39.2610,
+    scenarioId: 'hospital',
+    description: 'Emergency: trauma medical response',
     reportedAt: Date.now() - 1000 * 60 * 5,
     assignedUnits: ['Ambulance-2', 'Fire-1'],
     roadId: null,
-    estimatedClearanceMinutes: 60
-  }
+    estimatedClearanceMinutes: 60,
+  },
+  {
+    id: 'inc-4',
+    type: IncidentType.CONSTRUCTION,
+    severity: IncidentSeverity.SEVERE,
+    lat: 8.5620,
+    lng: 39.2450,
+    scenarioId: 'expressway',
+    description: 'Expressway toll merge construction',
+    reportedAt: Date.now() - 1000 * 60 * 25,
+    assignedUnits: ['Traffic-Patrol-3'],
+    roadId: null,
+    estimatedClearanceMinutes: 30,
+  },
+  {
+    id: 'inc-5',
+    type: IncidentType.ACCIDENT,
+    severity: IncidentSeverity.CRITICAL,
+    lat: 8.5550,
+    lng: 39.2650,
+    scenarioId: 'random',
+    description: 'Procedural anomaly: emergency dispatch',
+    reportedAt: Date.now() - 1000 * 60 * 2,
+    assignedUnits: ['Drone-Alpha', 'Rapid-Unit-7'],
+    roadId: null,
+    estimatedClearanceMinutes: 20,
+  },
 ];
 
 export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
@@ -358,7 +404,26 @@ export const MapView: React.FC<MapViewProps> = memo(({ onSelectRegion }) => {
       marker.on('click', () => {
         setSelectedRoadId(null);
         setSelectedVehicleId(null);
-        useSimulationStore.getState().enterIncidentSimulation(incident);
+
+        // Load corresponding 3D scenario
+        const scenarioId = incident.scenarioId || 'posta_bet';
+        loadSimulationScenario(scenarioId);
+
+        // Trigger simulation incident dynamics
+        if (incident.type === IncidentType.ROAD_CLOSURE) {
+          blockRoadLane();
+        } else if (incident.type === IncidentType.ACCIDENT) {
+          blockRoadLane();
+          spawnEmergencyUnits(1);
+        } else {
+          spawnEmergencyUnits(2);
+        }
+
+        // Switch to 3D simulation and start ticker
+        const store = useSimulationStore.getState();
+        store.setViewMode('simulation');
+        startSimulation();
+        store.enterIncidentSimulation(incident);
       });
     });
 
