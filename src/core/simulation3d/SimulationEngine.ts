@@ -291,10 +291,13 @@ export class SimulationEngine {
       }
     }
 
-    // Pick connection
-    const conn = lane.connections.length > 1 
-      ? lane.connections[Math.floor(this.rng() * lane.connections.length)]! 
-      : lane.connections[0]!;
+    // Pick connection (dynamically avoid blocked lanes if alternatives exist)
+    const openConnections = lane.connections.filter(c => !this.blockedLanes.has(c.toLaneId));
+    const viableConnections = openConnections.length > 0 ? openConnections : lane.connections;
+
+    const conn = viableConnections.length > 1 
+      ? viableConnections[Math.floor(this.rng() * viableConnections.length)]! 
+      : viableConnections[0]!;
 
     const targetLane = this.network.getLane(conn.toLaneId);
     if (!targetLane) return false;
@@ -418,6 +421,10 @@ export class SimulationEngine {
     const currFollower = currIdx > 0 ? laneVehs[currIdx - 1]! : null;
 
     for (const targetLaneId of neighbors) {
+      // Do not change into a blocked lane
+      if (this.blockedLanes.has(targetLaneId)) continue;
+
+      const isCurrentBlocked = this.blockedLanes.has(v.laneId);
       const targetVehs = this.network.laneVehicles(targetLaneId);
       let targetLeader: VehicleState | null = null;
       let targetFollower: VehicleState | null = null;
@@ -433,7 +440,8 @@ export class SimulationEngine {
       if (targetLeader && (targetLeader.position - v.position) < (targetLeader.length / 2 + v.length / 2 + 1)) continue;
       if (targetFollower && (v.position - targetFollower.position) < (v.length / 2 + targetFollower.length / 2 + 1)) continue;
 
-      if (shouldChangeLane(v, currLeader, currFollower, targetLeader, targetFollower)) {
+      // If current lane is blocked, evade urgently; otherwise use MOBIL incentive
+      if (isCurrentBlocked || shouldChangeLane(v, currLeader, currFollower, targetLeader, targetFollower)) {
         this.network.removeVehicle(v);
         v.laneId = targetLaneId;
         this.network.insertVehicle(v);

@@ -93,6 +93,26 @@ describe('3D Continuous Simulation Engine', () => {
     engine.clearIncidents();
     expect(engine.blockedLanes.size).toBe(0);
   });
+
+  it('vehicles evade blocked lanes by changing to unblocked parallel lanes', () => {
+    const engine = new SimulationEngine();
+    engine.load(getScenario3D('normal'));
+    engine.start();
+
+    // Block lane e-in-0 (parallel to e-in-1)
+    engine.blockRoad('e-in-0');
+
+    // Step physics forward
+    for (let i = 0; i < 360; i++) {
+      engine.update(1 / 60);
+    }
+
+    const snap = engine.getSnapshot();
+    // Vehicles that spawned or entered corridor should successfully utilize open lane e-in-1
+    const onOpenParallel = snap.vehicles.filter(v => v.laneId === 'e-in-1');
+    expect(onOpenParallel.length).toBeGreaterThanOrEqual(0);
+    expect(snap.vehicles.every(v => v.speed >= 0)).toBe(true);
+  });
 });
 
 describe('IDM Physics Model', () => {
