@@ -1288,7 +1288,15 @@ export class Renderer3D {
       
       if (wPos) {
         mesh.position.set(wPos.x, 0, wPos.y);
-        mesh.rotation.y = -ang;
+        
+        // Smooth rotation: lerp towards target angle to prevent warping at intersections
+        const targetRotY = -ang;
+        let deltaRot = targetRotY - mesh.rotation.y;
+        // Handle angle wrapping (-π to π)
+        while (deltaRot > Math.PI) deltaRot -= Math.PI * 2;
+        while (deltaRot < -Math.PI) deltaRot += Math.PI * 2;
+        // Smooth interpolation (0.15 = natural turning speed)
+        mesh.rotation.y += deltaRot * 0.15;
       }
 
       if (mesh.userData.brakelightMat) {
