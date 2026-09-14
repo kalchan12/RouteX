@@ -63,6 +63,19 @@ export class SimulationEngine {
     officer: string;
   }> = [];
   public lastIncidentFocus: { vehicleId: string; type: string; description: string; time: number } | null = null;
+  public activeEncounter: {
+    vehicleId: string;
+    stage: 'whistling' | 'approaching' | 'talking' | 'stepped_out' | 'telebirr_payment' | 'released';
+    speaker: 'officer' | 'driver';
+    amharic: string;
+    english: string;
+    plateNumber: string;
+    fineAmountETB: number;
+    isBribe: boolean;
+    plateConfiscated: boolean;
+    isDriverSteppedOut: boolean;
+    telebirrCode?: string;
+  } | null = null;
 
   load(scenario: Scenario): void {
     this.currentScenario = scenario;
@@ -77,6 +90,7 @@ export class SimulationEngine {
     this.totalTravelTime = 0;
     this.trafficSpikeTimer = 0;
     this.trafficSpikeMultiplier = 1.0;
+    this.activeEncounter = null;
     this.rng = createRNG(scenario.seed);
 
     for (const r of scenario.roads) this.network.addRoad(r);
@@ -317,39 +331,147 @@ export class SimulationEngine {
       }
     }
 
-    // 4.7. Traffic Officer Pull-Over & Ticket Issuing
+    // 4.7. Traffic Officer Pull-Over, Whistling, Confrontation & Telebirr Settlement
     for (const v of all) {
       if (v.violation && !v.violation.ticketIssued && !v.isPulledOver && !v.isCrashed) {
         v.isPulledOver = true;
-        v.pullOverTimer = 10; // 10s ticketing stop
+        v.pullOverTimer = 18; // 18-second cinematic encounter
         v.hasHazardLights = true;
         v.speed = 0;
         v.violation.ticketIssued = true;
+        v.encounterStage = 'whistling';
+        v.encounterTimer = 0;
+        v.isWindowDown = false;
+        v.isDriverSteppedOut = false;
+        v.plateConfiscated = false;
+        // 40% chance driver negotiates bribe for minor speed violation, 0% for crash
+        v.bribeAccepted = v.violation.type === 'speeding' && this.rng() < 0.45;
 
         const ticketNumber = `TKT-${Math.floor(10000 + this.rng() * 90000)}`;
-        const officers = ['Officer Bekele', 'Officer Desta', 'Officer Almaz', 'Traffic Patrol #4'];
+        const officers = ['Officer Girma', 'Officer Bekele', 'Officer Desta', 'Officer Almaz'];
+        const chosenOfficer = officers[Math.floor(this.rng() * officers.length)]!;
+        const fineETB = v.bribeAccepted ? Math.round(v.violation.fine * 0.4) : v.violation.fine;
+
         const citation = {
           id: `cit-${Date.now()}-${v.id}`,
           ticketNumber,
           plateNumber: v.licensePlate || `ET-3-A${Math.floor(100 + this.rng() * 900)}`,
-          violationType: v.violation.type,
-          fineAmountETB: v.violation.fine,
+          violationType: v.bribeAccepted ? 'settled_direct' : v.violation.type,
+          fineAmountETB: fineETB,
           timestamp: Date.now(),
           vehicleId: v.id,
           location: v.roadId,
-          officer: officers[Math.floor(this.rng() * officers.length)]!,
+          officer: chosenOfficer,
         };
         this.recentCitations.unshift(citation);
         if (this.recentCitations.length > 25) this.recentCitations.pop();
+
+        v.telebirrTransaction = {
+          code: `TB-${Math.floor(100000000 + this.rng() * 900000000)}`,
+          amount: fineETB,
+          recipient: v.bribeAccepted ? `${chosenOfficer} (Telebirr Wallet)` : 'Federal Police Commission (Traffic Dept)',
+          isBribe: v.bribeAccepted,
+        };
       }
 
       if (v.isPulledOver && v.pullOverTimer !== undefined) {
         v.pullOverTimer -= dt;
+        v.encounterTimer = (v.encounterTimer || 0) + dt;
         v.speed = 0;
+
+        const t = v.encounterTimer;
+        // STAGE 1: Whistling & pull-over signal (0 to 3.5s)
+        if (t < 3.5) {
+          v.encounterStage = 'whistling';
+          v.encounterDialog = {
+            speaker: 'officer',
+            amharic: 'ፊሽካ! ኧረ አቁም! ወደ ዳር ያዝ!',
+            english: '*Blows whistle sharply* Hey! Pull over to the curb immediately!',
+          };
+        }
+        // STAGE 2: Officer approaches & driver rolls down window (3.5 to 7.0s)
+        else if (t < 7.0) {
+          v.encounterStage = 'approaching';
+          v.isWindowDown = true;
+          v.encounterDialog = {
+            speaker: 'officer',
+            amharic: 'ጤና ይስጥልኝ አሽከርካሪ። ፍቃድና ቦሎ ያሳዩኝ!',
+            english: 'Good day driver. Please present your license and registration!',
+          };
+        }
+        // STAGE 3: Violation explanation & driver step-out for severe offenses (7.0 to 11.0s)
+        else if (t < 11.0) {
+          const isSevere = v.violation?.type === 'red_light' || v.violation?.type === 'pedestrian_hazard' || v.violation?.type === 'crash';
+          if (isSevere) {
+            v.encounterStage = 'stepped_out';
+            v.isDriverSteppedOut = true;
+            v.plateConfiscated = true;
+            v.encounterDialog = {
+              speaker: 'officer',
+              amharic: 'ቀዩን መብራት ጥሰሃል! ከእንቅስቃሴ ውጪ ነህ፤ ሰሌዳህን እፈታለሁ፣ ውረድ ከጋቢናው!',
+              english: 'You violated the red signal & risked pedestrians! Step out of the car, I am removing your plates!',
+            };
+          } else {
+            v.encounterStage = 'talking';
+            v.encounterDialog = {
+              speaker: 'driver',
+              amharic: 'ጌታዬ ተሳስቼ ነው፣ አስቸኳይ ጉዳይ ገጥሞኝ ነው። ተረዳኝ!',
+              english: 'Officer please, it was an honest mistake, I had an urgent situation. Have mercy!',
+            };
+          }
+        }
+        // STAGE 4: Telebirr payment / Bribe settlement (11.0 to 16.0s)
+        else if (t < 16.0) {
+          v.encounterStage = 'telebirr_payment';
+          if (v.bribeAccepted) {
+            v.encounterDialog = {
+              speaker: 'officer',
+              amharic: 'እሺ ለሻይ የሚሆን በቴሌብር ላክና ሰሌዳህን መልስልሃለሁ። የቁጥር ኮዱን አስገባ!',
+              english: 'Alright, transfer some lunch money on Telebirr and take your plate. Enter the USSD code!',
+            };
+          } else {
+            v.encounterDialog = {
+              speaker: 'officer',
+              amharic: 'ቅጣቱ በቴሌብር የፌደራል ፖሊስ አካውንት ተከፍሏል። ደረሰኝዎ ገብቷል።',
+              english: 'Official penalty charged via Telebirr Federal Traffic Police portal. Payment confirmed.',
+            };
+          }
+        }
+        // STAGE 5: Plate restored & released (16.0s+)
+        else {
+          v.encounterStage = 'released';
+          v.plateConfiscated = false;
+          v.encounterDialog = {
+            speaker: 'officer',
+            amharic: 'በቃ ሂድ፣ ሌላ ጊዜ ህግ አክብር!',
+            english: 'You may proceed. Respect traffic lights and pedestrians next time!',
+          };
+        }
+
+        // Active encounter published to snapshot
+        this.activeEncounter = {
+          vehicleId: v.id,
+          stage: v.encounterStage,
+          speaker: v.encounterDialog.speaker,
+          amharic: v.encounterDialog.amharic,
+          english: v.encounterDialog.english,
+          plateNumber: v.licensePlate || `ET-3-A882`,
+          fineAmountETB: v.telebirrTransaction?.amount || 1500,
+          isBribe: !!v.bribeAccepted,
+          plateConfiscated: !!v.plateConfiscated,
+          isDriverSteppedOut: !!v.isDriverSteppedOut,
+          telebirrCode: v.telebirrTransaction?.code,
+        };
+
         if (v.pullOverTimer <= 0) {
           v.isPulledOver = false;
           v.hasHazardLights = false;
+          v.isDriverSteppedOut = false;
+          v.isWindowDown = false;
+          v.plateConfiscated = false;
+          v.encounterStage = 'none';
           v.desiredSpeed = Math.max(8, v.desiredSpeed * 0.85); // Drives moderately
+          this.activeEncounter = null;
         }
       }
     }
@@ -654,6 +776,7 @@ export class SimulationEngine {
       blockedLanes: Array.from(this.blockedLanes),
       citations: this.recentCitations,
       lastIncident: this.lastIncidentFocus,
+      activeEncounter: this.activeEncounter,
       activeAlgorithm: this.activeAlgorithm,
     };
   }

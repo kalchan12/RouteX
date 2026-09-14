@@ -3,6 +3,7 @@ import { getSimulationEngine } from '../../services/simulationService';
 import { Renderer3D } from '../../rendering/three/Renderer3D';
 import { useSimulationStore } from '../../stores';
 import { ActionCamOverlay } from './ActionCamOverlay';
+import { CinematicEncounterOverlay } from './CinematicEncounterOverlay';
 import { DispatchDock } from './DispatchDock';
 
 /**
@@ -103,6 +104,9 @@ export const Simulation3DView = memo(function Simulation3DView() {
 
       {/* Cinematic Action Cam & Citations Overlay */}
       <ActionCamOverlay />
+
+      {/* Cinematic Subtitles & Telebirr Payment Overlay */}
+      <CinematicEncounterOverlay />
 
       {/* Interactive Law Enforcement & Tactical Dispatch Dock */}
       <DispatchDock />

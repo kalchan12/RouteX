@@ -202,6 +202,19 @@ export interface SimulationSnapshot {
     description: string;
     timestamp: number;
   } | null;
+  activeEncounter?: {
+    vehicleId: string;
+    stage: 'whistling' | 'approaching' | 'talking' | 'stepped_out' | 'telebirr_payment' | 'released';
+    speaker: 'officer' | 'driver';
+    amharic: string;
+    english: string;
+    plateNumber: string;
+    fineAmountETB: number;
+    isBribe: boolean;
+    plateConfiscated: boolean;
+    isDriverSteppedOut: boolean;
+    telebirrCode?: string;
+  } | null;
   activeAlgorithm?: 'dijkstra' | 'astar' | 'dynamic_hld';
 }
 

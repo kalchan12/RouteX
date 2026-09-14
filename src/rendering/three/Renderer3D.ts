@@ -649,62 +649,131 @@ export class Renderer3D {
     this.environmentGroup.add(this.trafficOfficer);
   }
 
+  private whistleWave: THREE.Mesh | null = null;
+  private officerArmWhistle: THREE.Mesh | null = null;
+  private officerArmWave: THREE.Mesh | null = null;
+
   private createTrafficOfficer(): THREE.Group {
     const officer = new THREE.Group();
     officer.name = 'traffic-officer';
     officer.position.set(6.5, 0, 6.5); // At intersection curb
 
-    // Dark trousers
-    const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.75);
-    legGeo.translate(0, -0.375, 0);
+    // Sturdy, heavy legs
+    const legGeo = new THREE.CylinderGeometry(0.12, 0.11, 0.72);
+    legGeo.translate(0, -0.36, 0);
     const legMat = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.8 });
     const legL = new THREE.Mesh(legGeo, legMat);
-    legL.position.set(0.11, 0.75, 0);
+    legL.position.set(0.16, 0.72, 0);
     const legR = new THREE.Mesh(legGeo, legMat);
-    legR.position.set(-0.11, 0.75, 0);
+    legR.position.set(-0.16, 0.72, 0);
     officer.add(legL, legR);
 
-    // Torso with neon safety vest
-    const torsoGeo = new THREE.BoxGeometry(0.42, 0.65, 0.25);
-    const vestMat = new THREE.MeshStandardMaterial({ color: '#84cc16', emissive: '#4d7c0f', emissiveIntensity: 0.4 });
+    // Thick leather boots
+    const bootGeo = new THREE.BoxGeometry(0.15, 0.12, 0.22);
+    const bootMat = new THREE.MeshStandardMaterial({ color: '#09090b', roughness: 0.5 });
+    const bootL = new THREE.Mesh(bootGeo, bootMat);
+    bootL.position.set(0.16, 0.06, 0.04);
+    const bootR = new THREE.Mesh(bootGeo, bootMat);
+    bootR.position.set(-0.16, 0.06, 0.04);
+    officer.add(bootL, bootR);
+
+    // Stocky, broad chest with neon safety vest
+    const torsoGeo = new THREE.BoxGeometry(0.56, 0.65, 0.38);
+    const vestMat = new THREE.MeshStandardMaterial({ color: '#84cc16', emissive: '#4d7c0f', emissiveIntensity: 0.35 });
     const torso = new THREE.Mesh(torsoGeo, vestMat);
     torso.position.y = 1.05;
     officer.add(torso);
 
-    // Reflective stripes
-    const stripeGeo = new THREE.BoxGeometry(0.44, 0.08, 0.27);
-    const stripeMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#ffffff', emissiveIntensity: 0.8 });
+    // Prominent round belly (fat officer anatomy)
+    const bellyGeo = new THREE.SphereGeometry(0.26, 16, 12);
+    bellyGeo.scale(1.1, 0.9, 1.2);
+    const belly = new THREE.Mesh(bellyGeo, vestMat);
+    belly.position.set(0, 0.96, 0.16);
+    officer.add(belly);
+
+    // Heavy leather duty belt with gold buckle & holster
+    const beltGeo = new THREE.BoxGeometry(0.60, 0.10, 0.42);
+    const beltMat = new THREE.MeshStandardMaterial({ color: '#1c1917', roughness: 0.7 });
+    const belt = new THREE.Mesh(beltGeo, beltMat);
+    belt.position.y = 0.76;
+    officer.add(belt);
+
+    const buckleGeo = new THREE.BoxGeometry(0.14, 0.09, 0.02);
+    const goldMat = new THREE.MeshStandardMaterial({ color: '#eab308', metalness: 0.9, roughness: 0.2 });
+    const buckle = new THREE.Mesh(buckleGeo, goldMat);
+    buckle.position.set(0, 0.76, 0.22);
+    officer.add(buckle);
+
+    // Reflective safety stripes
+    const stripeGeo = new THREE.BoxGeometry(0.58, 0.08, 0.40);
+    const stripeMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#ffffff', emissiveIntensity: 0.9 });
     const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-    stripe.position.y = 1.1;
+    stripe.position.y = 1.15;
     officer.add(stripe);
 
-    // Head
-    const headGeo = new THREE.SphereGeometry(0.14);
-    const skinMat = new THREE.MeshStandardMaterial({ color: '#8b5a2b', roughness: 0.7 });
+    // Police badge
+    const badgeGeo = new THREE.BoxGeometry(0.08, 0.10, 0.02);
+    const badge = new THREE.Mesh(badgeGeo, goldMat);
+    badge.position.set(0.16, 1.22, 0.21);
+    officer.add(badge);
+
+    // Officer Head & Face
+    const headGeo = new THREE.SphereGeometry(0.16);
+    const skinMat = new THREE.MeshStandardMaterial({ color: '#78350f', roughness: 0.7 });
     const head = new THREE.Mesh(headGeo, skinMat);
-    head.position.y = 1.5;
+    head.position.y = 1.48;
     officer.add(head);
 
-    // White Traffic Cap
-    const capGeo = new THREE.CylinderGeometry(0.17, 0.15, 0.08, 16);
+    // White Traffic Police Peaked Cap
+    const capGeo = new THREE.CylinderGeometry(0.20, 0.18, 0.09, 16);
     const capMat = new THREE.MeshStandardMaterial({ color: '#ffffff' });
     const cap = new THREE.Mesh(capGeo, capMat);
     cap.position.y = 1.62;
     officer.add(cap);
 
-    // Arm holding ticket notepad / baton
-    const armGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.45);
-    armGeo.translate(0, -0.22, 0);
-    const armMat = new THREE.MeshStandardMaterial({ color: '#84cc16' });
-    const armR = new THREE.Mesh(armGeo, armMat);
-    armR.position.set(0.26, 1.35, 0);
-    armR.rotation.x = -Math.PI / 2.3;
-    officer.add(armR);
+    const visorGeo = new THREE.BoxGeometry(0.22, 0.02, 0.14);
+    const visorMat = new THREE.MeshStandardMaterial({ color: '#09090b', roughness: 0.3 });
+    const visor = new THREE.Mesh(visorGeo, visorMat);
+    visor.position.set(0, 1.59, 0.14);
+    officer.add(visor);
 
-    const padGeo = new THREE.BoxGeometry(0.15, 0.22, 0.03);
+    // Silver Whistle held near mouth
+    const whistleGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.08);
+    whistleGeo.rotateX(Math.PI / 2);
+    const silverMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.9, roughness: 0.1 });
+    const whistle = new THREE.Mesh(whistleGeo, silverMat);
+    whistle.position.set(0, 1.42, 0.18);
+    officer.add(whistle);
+
+    // Expanding visual sonic wave for whistle blowing
+    const waveGeo = new THREE.RingGeometry(0.1, 0.22, 16);
+    const waveMat = new THREE.MeshBasicMaterial({ color: '#38bdf8', side: THREE.DoubleSide, transparent: true, opacity: 0 });
+    this.whistleWave = new THREE.Mesh(waveGeo, waveMat);
+    this.whistleWave.position.set(0, 1.42, 0.30);
+    officer.add(this.whistleWave);
+
+    // Right Arm: holds whistle or ticket pad
+    const armGeo = new THREE.CylinderGeometry(0.065, 0.055, 0.48);
+    armGeo.translate(0, -0.24, 0);
+    const armMat = new THREE.MeshStandardMaterial({ color: '#84cc16' });
+    
+    this.officerArmWhistle = new THREE.Mesh(armGeo, armMat);
+    this.officerArmWhistle.position.set(0.32, 1.35, 0);
+    this.officerArmWhistle.rotation.x = -Math.PI / 2.2;
+    this.officerArmWhistle.rotation.z = -0.25;
+    officer.add(this.officerArmWhistle);
+
+    // Left Arm: waves driver to pull over or gestures
+    this.officerArmWave = new THREE.Mesh(armGeo, armMat);
+    this.officerArmWave.position.set(-0.32, 1.35, 0);
+    this.officerArmWave.rotation.x = -Math.PI / 3;
+    officer.add(this.officerArmWave);
+
+    // Ticket notepad in hand
+    const padGeo = new THREE.BoxGeometry(0.16, 0.22, 0.03);
     const padMat = new THREE.MeshStandardMaterial({ color: '#fef08a' });
     const pad = new THREE.Mesh(padGeo, padMat);
-    pad.position.set(0.26, 1.35, 0.4);
+    pad.position.set(0.34, 1.35, 0.4);
     officer.add(pad);
 
     return officer;
@@ -1245,10 +1314,52 @@ export class Renderer3D {
     hzRR.position.set(-v.length / 2, 0.75, v.width / 2 - 0.1);
     group.add(hzFL, hzFR, hzRL, hzRR);
     
+    // Front License Plate (Removable during severe police violations)
+    const plateGeo = new THREE.BoxGeometry(0.04, 0.22, 0.6);
+    const plateMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.3 });
+    const frontPlate = new THREE.Mesh(plateGeo, plateMat);
+    frontPlate.position.set(v.length / 2 + 0.03, 0.45, 0);
+    group.add(frontPlate);
+
+    // Driver-side window pane (rolls down during officer encounter)
+    const winGeo = new THREE.PlaneGeometry(0.55, 0.35);
+    const winMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.85 });
+    const driverWindow = new THREE.Mesh(winGeo, winMat);
+    driverWindow.position.set(-v.length * 0.05, 1.35, v.width / 2 + 0.01);
+    group.add(driverWindow);
+
+    // Driver 3D figure standing outside car when ordered by officer
+    const driverFigure = new THREE.Group();
+    driverFigure.name = 'driver-figure';
+    const dTorsoGeo = new THREE.BoxGeometry(0.3, 0.45, 0.18);
+    const dTorsoMat = new THREE.MeshStandardMaterial({ color: '#3b82f6' }); // Blue jacket
+    const dTorso = new THREE.Mesh(dTorsoGeo, dTorsoMat);
+    dTorso.position.y = 1.05;
+    driverFigure.add(dTorso);
+    const dHeadGeo = new THREE.SphereGeometry(0.11);
+    const dHeadMat = new THREE.MeshStandardMaterial({ color: '#8b5a2b' });
+    const dHead = new THREE.Mesh(dHeadGeo, dHeadMat);
+    dHead.position.y = 1.42;
+    driverFigure.add(dHead);
+    const dLegGeo = new THREE.CylinderGeometry(0.05, 0.04, 0.7);
+    const dLegMat = new THREE.MeshStandardMaterial({ color: '#1f2937' });
+    const dLegL = new THREE.Mesh(dLegGeo, dLegMat);
+    dLegL.position.set(0.08, 0.45, 0);
+    const dLegR = new THREE.Mesh(dLegGeo, dLegMat);
+    dLegR.position.set(-0.08, 0.45, 0);
+    driverFigure.add(dLegL, dLegR);
+    // Position outside driver door
+    driverFigure.position.set(-v.length * 0.1, 0, v.width / 2 + 0.7);
+    driverFigure.visible = false;
+    group.add(driverFigure);
+    
     group.userData = { 
       ...group.userData, 
       brakelightMat: blMat, 
       hazardMat: hazardMat,
+      frontPlate,
+      driverWindow,
+      driverFigure,
       vehicleId: v.id 
     };
     return group;
@@ -1406,6 +1517,22 @@ export class Renderer3D {
         mesh.userData.hazardMat.emissive.set(hazardBlink ? '#f59e0b' : '#000000');
         mesh.userData.hazardMat.emissiveIntensity = hazardBlink ? 2.5 : 0;
       }
+
+      // Animate driver window roll-down during officer approach
+      if (mesh.userData.driverWindow) {
+        const targetY = v.isWindowDown ? 1.15 : 1.35;
+        mesh.userData.driverWindow.position.y += (targetY - mesh.userData.driverWindow.position.y) * 0.1;
+      }
+
+      // Hide front license plate if officer confiscated it
+      if (mesh.userData.frontPlate) {
+        mesh.userData.frontPlate.visible = !v.plateConfiscated;
+      }
+
+      // Show/hide 3D driver figure standing outside car
+      if (mesh.userData.driverFigure) {
+        mesh.userData.driverFigure.visible = !!v.isDriverSteppedOut;
+      }
     }
     
     for (const [id, mesh] of this.vehicleMeshes.entries()) {
@@ -1415,13 +1542,71 @@ export class Renderer3D {
       }
     }
 
-    // Traffic Police Officer tracking violators
+    // Traffic Police Officer encounter simulation & animations
     if (this.trafficOfficer) {
       const violator = Array.from(engine.network.getAllVehicles()).find(veh => veh.isPulledOver || veh.isViolator || !!veh.violation);
       if (violator) {
         const vMesh = this.vehicleMeshes.get(violator.id);
         if (vMesh) {
-          this.trafficOfficer.lookAt(vMesh.position.x, 0, vMesh.position.z);
+          const encounterStage = violator.encounterStage || 'whistling';
+
+          if (encounterStage === 'whistling') {
+            // Stay at curb, face car, blow whistle and wave down
+            this.trafficOfficer.position.set(6.5, 0, 6.5);
+            this.trafficOfficer.lookAt(vMesh.position.x, 0, vMesh.position.z);
+
+            // Animate whistle sonic wave expanding
+            if (this.whistleWave) {
+              const pulse = (now * 0.008) % 1;
+              this.whistleWave.scale.setScalar(1 + pulse * 2.5);
+              (this.whistleWave.material as THREE.MeshBasicMaterial).opacity = 1 - pulse;
+            }
+
+            // Arm waving down
+            if (this.officerArmWave) {
+              this.officerArmWave.rotation.x = -Math.PI / 3 + Math.sin(now * 0.015) * 0.5;
+            }
+            if (this.officerArmWhistle) {
+              this.officerArmWhistle.rotation.x = -Math.PI / 2.1;
+            }
+          } else if (encounterStage === 'approaching' || encounterStage === 'talking' || encounterStage === 'stepped_out' || encounterStage === 'telebirr_payment') {
+            // Officer walks over to driver-side window
+            // Target driver side: slightly offset from vehicle position
+            const targetX = vMesh.position.x + (violator.laneId.includes('w') ? 0 : 1.4);
+            const targetZ = vMesh.position.z + 1.2;
+            this.trafficOfficer.position.lerp(new THREE.Vector3(targetX, 0, targetZ), 0.04);
+            this.trafficOfficer.lookAt(vMesh.position.x, 0, vMesh.position.z);
+
+            // Hide whistle wave
+            if (this.whistleWave) {
+              (this.whistleWave.material as THREE.MeshBasicMaterial).opacity = 0;
+            }
+
+            // Gesticulate talking / inspecting ticket
+            if (this.officerArmWhistle) {
+              this.officerArmWhistle.rotation.x = -Math.PI / 2.5 + Math.sin(now * 0.005) * 0.2;
+            }
+            if (this.officerArmWave) {
+              this.officerArmWave.rotation.x = -Math.PI / 4 + Math.sin(now * 0.004) * 0.15;
+            }
+          } else {
+            // Return to curb
+            this.trafficOfficer.position.lerp(new THREE.Vector3(6.5, 0, 6.5), 0.03);
+            if (this.whistleWave) {
+              (this.whistleWave.material as THREE.MeshBasicMaterial).opacity = 0;
+            }
+          }
+
+          // Trigger Action Cam to automatically focus on this confrontation
+          if (!this.actionCamTargetId && (encounterStage === 'whistling' || encounterStage === 'stepped_out' || encounterStage === 'telebirr_payment')) {
+            this.controls.target.lerp(vMesh.position, 0.06);
+          }
+        }
+      } else {
+        // Return to curb post when no violators
+        this.trafficOfficer.position.lerp(new THREE.Vector3(6.5, 0, 6.5), 0.03);
+        if (this.whistleWave) {
+          (this.whistleWave.material as THREE.MeshBasicMaterial).opacity = 0;
         }
       }
     }
@@ -1470,9 +1655,9 @@ export class Renderer3D {
       if (b.mesh.position.z < -150) b.mesh.position.z = 150;
     }
 
-    // 4. Pedestrians
+    // 4. Pedestrians — Strict Signal Exclusivity (Walk ONLY when road signal is RED)
     for (const p of this.peds) {
-      let canCross = false;
+      let isTrafficRedForVehicles = false;
       if (ix) {
         let allRed = true;
         for (const laneName of p.cw.lightLanes) {
@@ -1483,47 +1668,71 @@ export class Renderer3D {
           }
           if (!allRed) break;
         }
-        canCross = allRed;
+        isTrafficRedForVehicles = allRed;
       }
 
-      // Vehicle collision avoidance — prevent pedestrians walking through cars
+      // Check if pedestrian is currently at the sidewalk curb (waiting zone)
+      let isWaitingAtCurb = false;
+      if (p.cw.horizontal) {
+        if (p.dir === 1 && p.x <= p.cw.x1 + 0.8) isWaitingAtCurb = true;
+        if (p.dir === -1 && p.x >= p.cw.x2 - 0.8) isWaitingAtCurb = true;
+      } else {
+        if (p.dir === 1 && p.z <= p.cw.z1 + 0.8) isWaitingAtCurb = true;
+        if (p.dir === -1 && p.z >= p.cw.z2 - 0.8) isWaitingAtCurb = true;
+      }
+
+      // STRICT EXCLUSIVITY:
+      // If waiting at curb, only step into road when vehicle light is strictly RED.
+      // If already on the crosswalk and light turns green, hurry across to safety.
+      const canProceed = isWaitingAtCurb ? isTrafficRedForVehicles : true;
+
+      // Vehicle collision avoidance & violation reporting
       let blockedByVehicle = false;
-      for (const [, vMesh] of this.vehicleMeshes) {
+      for (const v of engine.network.getAllVehicles()) {
+        const vMesh = this.vehicleMeshes.get(v.id);
+        if (!vMesh) continue;
         const dx = p.x - vMesh.position.x;
         const dz = p.z - vMesh.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
-        // Vehicle bounding radius + pedestrian radius + safety margin
-        if (dist < 3.0) {
+        
+        if (dist < 3.2) {
           blockedByVehicle = true;
+          // If vehicle encroaches while pedestrians have RED walk signal, fine car immediately!
+          if (isTrafficRedForVehicles && !v.violation && v.speed > 1.0) {
+            v.violation = {
+              type: 'pedestrian_hazard',
+              fine: 3500,
+              ticketIssued: false,
+              timestamp: engine.getSnapshot().simTime,
+            };
+            engine.lastIncidentFocus = {
+              vehicleId: v.id,
+              type: 'pedestrian_hazard',
+              description: `Pedestrian Hazard: ${v.licensePlate || v.id} failed to yield at zebra crossing!`,
+              time: engine.getSnapshot().simTime,
+            };
+          }
           break;
         }
       }
 
-      let isAtEdge = false;
       const active = engine.getSnapshot().isRunning;
-      
       let moved = false;
       if (p.cw.horizontal) {
-        if (p.dir === 1 && p.x <= p.cw.x1 + 1) isAtEdge = true;
-        if (p.dir === -1 && p.x >= p.cw.x2 - 1) isAtEdge = true;
-        if ((!isAtEdge || canCross) && !blockedByVehicle) {
-            p.x += p.dir * p.speed * dt * (active ? 1 : 0);
-            moved = active;
+        if (canProceed && !blockedByVehicle) {
+          p.x += p.dir * p.speed * dt * (active ? 1 : 0);
+          moved = active;
         }
         if (p.x > p.cw.x2 + 1.5) { p.dir = -1; p.speed = 0.6 + Math.random(); }
         if (p.x < p.cw.x1 - 1.5) { p.dir = 1; p.speed = 0.6 + Math.random(); }
-        
         p.mesh.rotation.y = p.dir === 1 ? Math.PI / 2 : -Math.PI / 2;
       } else {
-        if (p.dir === 1 && p.z <= p.cw.z1 + 1) isAtEdge = true;
-        if (p.dir === -1 && p.z >= p.cw.z2 - 1) isAtEdge = true;
-        if ((!isAtEdge || canCross) && !blockedByVehicle) {
-            p.z += p.dir * p.speed * dt * (active ? 1 : 0);
-            moved = active;
+        if (canProceed && !blockedByVehicle) {
+          p.z += p.dir * p.speed * dt * (active ? 1 : 0);
+          moved = active;
         }
         if (p.z > p.cw.z2 + 1.5) { p.dir = -1; p.speed = 0.6 + Math.random(); }
         if (p.z < p.cw.z1 - 1.5) { p.dir = 1; p.speed = 0.6 + Math.random(); }
-        
         p.mesh.rotation.y = p.dir === 1 ? 0 : Math.PI;
       }
 

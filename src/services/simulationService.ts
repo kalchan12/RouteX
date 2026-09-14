@@ -115,6 +115,7 @@ function broadcastSnapshot(): void {
       description: snap3d.lastIncident.description,
       timestamp: snap3d.lastIncident.time,
     } : null,
+    activeEncounter: snap3d.activeEncounter,
     activeAlgorithm: (snap3d.activeAlgorithm || 'astar') as 'dijkstra' | 'astar' | 'dynamic_hld',
   };
 

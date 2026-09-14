@@ -57,10 +57,29 @@ export interface VehicleState {
   hasHazardLights?: boolean;
   licensePlate?: string;
   violation?: {
-    type: 'speeding' | 'red_light' | 'crash' | 'illegal_lane';
+    type: 'speeding' | 'red_light' | 'crash' | 'illegal_lane' | 'pedestrian_hazard';
     fine: number;
     ticketIssued: boolean;
     timestamp: number;
+  };
+
+  /** Police Encounter & Telebirr Animation State */
+  encounterStage?: 'none' | 'whistling' | 'approaching' | 'talking' | 'stepped_out' | 'telebirr_payment' | 'released';
+  encounterTimer?: number;
+  encounterDialog?: {
+    speaker: 'officer' | 'driver';
+    amharic: string;
+    english: string;
+  };
+  isDriverSteppedOut?: boolean;
+  isWindowDown?: boolean;
+  plateConfiscated?: boolean;
+  bribeAccepted?: boolean;
+  telebirrTransaction?: {
+    code: string;
+    amount: number;
+    recipient: string;
+    isBribe: boolean;
   };
 }
 
@@ -214,6 +233,19 @@ export interface SimulationSnapshot {
   blockedLanes?: string[];
   citations?: any[];
   lastIncident?: { vehicleId: string; type: string; description: string; time: number } | null;
+  activeEncounter?: {
+    vehicleId: string;
+    stage: 'whistling' | 'approaching' | 'talking' | 'stepped_out' | 'telebirr_payment' | 'released';
+    speaker: 'officer' | 'driver';
+    amharic: string;
+    english: string;
+    plateNumber: string;
+    fineAmountETB: number;
+    isBribe: boolean;
+    plateConfiscated: boolean;
+    isDriverSteppedOut: boolean;
+    telebirrCode?: string;
+  } | null;
   activeAlgorithm?: string;
 }
 
