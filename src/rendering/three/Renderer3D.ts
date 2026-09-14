@@ -211,17 +211,29 @@ export class Renderer3D {
       ixRdMesh.rotation.x = -Math.PI / 2;
       ixRdMesh.receiveShadow = true;
       this.worldGroup.add(ixRdMesh);
-      // Zebra crossings — flush on road surface
-      const zebraGeo = new THREE.PlaneGeometry(0.6, 4);
-      const zebraMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.7, depthWrite: true });
+      // Zebra crossings — proper dimensions with Z-fighting fix
+      const zebraStripeW = 0.5;   // stripe width (along traffic)
+      const zebraStripeL = 3.2;   // stripe length (across road)
+      const zebraGap = 0.5;       // gap between stripes
+      const zebraCount = 7;       // stripes per crossing
+      const zebraTotalW = zebraCount * zebraStripeW + (zebraCount - 1) * zebraGap;
+      const zebraGeo = new THREE.PlaneGeometry(zebraStripeW, zebraStripeL);
+      const zebraMat = new THREE.MeshStandardMaterial({
+        color: '#ffffff',
+        roughness: 0.7,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+      });
       for (let i = 0; i < 4; i++) {
         const dist = ix.size / 2 + 1.5;
-        for (let j = -2.5; j <= 2.5; j += 0.9) {
+        for (let j = 0; j < zebraCount; j++) {
+          const offset = -zebraTotalW / 2 + zebraStripeW / 2 + j * (zebraStripeW + zebraGap);
           const zMesh = new THREE.Mesh(zebraGeo, zebraMat);
-          if (i === 0) zMesh.position.set(ix.position.x + dist, 0.026, ix.position.y + j);
-          if (i === 1) zMesh.position.set(ix.position.x - dist, 0.026, ix.position.y + j);
-          if (i === 2) { zMesh.position.set(ix.position.x + j, 0.026, ix.position.y + dist); zMesh.rotation.y = Math.PI / 2; }
-          if (i === 3) { zMesh.position.set(ix.position.x + j, 0.026, ix.position.y - dist); zMesh.rotation.y = Math.PI / 2; }
+          if (i === 0) zMesh.position.set(ix.position.x + dist, 0.028, ix.position.y + offset);
+          if (i === 1) zMesh.position.set(ix.position.x - dist, 0.028, ix.position.y + offset);
+          if (i === 2) { zMesh.position.set(ix.position.x + offset, 0.028, ix.position.y + dist); zMesh.rotation.y = Math.PI / 2; }
+          if (i === 3) { zMesh.position.set(ix.position.x + offset, 0.028, ix.position.y - dist); zMesh.rotation.y = Math.PI / 2; }
           zMesh.rotation.x = -Math.PI / 2;
           zMesh.receiveShadow = true;
           this.worldGroup.add(zMesh);
