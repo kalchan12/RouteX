@@ -1519,14 +1519,49 @@ export class Renderer3D {
       if (moved) {
           p.cycle += dt * p.speed * 8;
       } else {
-          p.cycle = 0;
+          p.cycle *= 0.95;
       }
-      
-      const swing = Math.sin(p.cycle) * 0.5;
-      p.armL.rotation.x = swing;
-      p.armR.rotation.x = -swing;
-      p.legL.rotation.x = -swing;
-      p.legR.rotation.x = swing;
+
+      if (Math.abs(p.cycle) > 0.05) {
+        // Walking gait cycle (biomechanical joint kinematics)
+        const hipSwing = Math.sin(p.cycle) * 0.44;
+        const kneeFlexL = Math.max(0, Math.sin(p.cycle * 2) * 0.6);
+        const kneeFlexR = Math.max(0, Math.sin(p.cycle * 2 + Math.PI) * 0.6);
+        const armSwing = Math.sin(p.cycle + Math.PI) * 0.35;
+        const forearmBendL = 0.25 + Math.max(0, Math.sin(p.cycle + Math.PI)) * 0.25;
+        const forearmBendR = 0.25 + Math.max(0, Math.sin(p.cycle)) * 0.25;
+        const bounce = Math.abs(Math.sin(p.cycle)) * 0.025;
+        const torsoTwist = Math.sin(p.cycle) * 0.04;
+
+        p.armL.rotation.x = -armSwing;
+        p.forearmL.rotation.x = forearmBendL;
+        p.armR.rotation.x = armSwing;
+        p.forearmR.rotation.x = forearmBendR;
+        
+        p.legL.rotation.x = hipSwing;
+        p.lowerLegL.rotation.x = kneeFlexL;
+        p.legR.rotation.x = -hipSwing;
+        p.lowerLegR.rotation.x = kneeFlexR;
+
+        p.mesh.position.y = bounce;
+        p.torso.rotation.y = torsoTwist;
+      } else {
+        // Idle animation with subtle breathing & weight shift
+        const idleSway = Math.sin(now * 0.0008) * 0.015;
+        const headLook = Math.sin(now * 0.0003 + p.speed) * 0.12;
+        
+        p.armL.rotation.x = 0;
+        p.armR.rotation.x = 0;
+        p.forearmL.rotation.x = 0.15;
+        p.forearmR.rotation.x = 0.15;
+        p.legL.rotation.x = 0;
+        p.legR.rotation.x = 0;
+        p.lowerLegL.rotation.x = 0;
+        p.lowerLegR.rotation.x = 0;
+        p.mesh.position.y = 0;
+        p.torso.rotation.z = idleSway;
+        if (p.head) p.head.rotation.y = headLook;
+      }
     }
 
     this.renderer.render(this.scene, this.camera);
