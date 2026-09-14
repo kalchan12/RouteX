@@ -54,13 +54,13 @@ export class SimulationEngine {
   public recentCitations: Array<{
     id: string;
     ticketNumber: string;
-    plate: string;
+    plateNumber: string;
     violationType: string;
-    fineETB: number;
+    fineAmountETB: number;
     timestamp: number;
     vehicleId: string;
     location: string;
-    officerName: string;
+    officer: string;
   }> = [];
   public lastIncidentFocus: { vehicleId: string; type: string; description: string; time: number } | null = null;
 
@@ -331,13 +331,13 @@ export class SimulationEngine {
         const citation = {
           id: `cit-${Date.now()}-${v.id}`,
           ticketNumber,
-          plate: v.licensePlate || `ET-3-A${Math.floor(100 + this.rng() * 900)}`,
+          plateNumber: v.licensePlate || `ET-3-A${Math.floor(100 + this.rng() * 900)}`,
           violationType: v.violation.type,
-          fineETB: v.violation.fine,
+          fineAmountETB: v.violation.fine,
           timestamp: Date.now(),
           vehicleId: v.id,
           location: v.roadId,
-          officerName: officers[Math.floor(this.rng() * officers.length)]!,
+          officer: officers[Math.floor(this.rng() * officers.length)]!,
         };
         this.recentCitations.unshift(citation);
         if (this.recentCitations.length > 25) this.recentCitations.pop();
