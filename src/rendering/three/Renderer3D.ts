@@ -500,60 +500,141 @@ export class Renderer3D {
       this.birds.push({ mesh: bird, vx, vz, baseY: bird.position.y, offset: Math.random() * Math.PI * 2 });
     }
 
-    // 4. Pedestrians
+    // 4. Pedestrians — Articulated human model (Drillis & Contini proportions)
     const cws = [
       { lightLanes: ['n-in'], horizontal: true, x1: -5.5, x2: 5.5, z1: -7.5, z2: -5.5 },
       { lightLanes: ['s-in'], horizontal: true, x1: -5.5, x2: 5.5, z1: 5.5, z2: 7.5 },
       { lightLanes: ['e-in-0', 'e-in-1'], horizontal: false, x1: 5.5, x2: 7.5, z1: -5.5, z2: 5.5 },
       { lightLanes: ['w-in-0', 'w-in-1'], horizontal: false, x1: -7.5, x2: -5.5, z1: -5.5, z2: 5.5 },
     ];
-    
-    const headGeo = new THREE.SphereGeometry(0.12);
-    const torsoGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.45);
-    const limbGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.4);
-    limbGeo.translate(0, -0.2, 0); // pivot at top
+
+    // Shared geometries for all pedestrians
+    const pedHeadGeo = new THREE.SphereGeometry(0.10, 12, 10);
+    const pedNeckGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.06);
+    const pedTorsoGeo = new THREE.BoxGeometry(0.30, 0.42, 0.16);
+    const pedHipsGeo = new THREE.BoxGeometry(0.24, 0.12, 0.14);
+    const pedUpperArmGeo = new THREE.CylinderGeometry(0.035, 0.03, 0.26);
+    pedUpperArmGeo.translate(0, -0.13, 0); // pivot at shoulder
+    const pedForearmGeo = new THREE.CylinderGeometry(0.03, 0.025, 0.22);
+    pedForearmGeo.translate(0, -0.11, 0); // pivot at elbow
+    const pedHandGeo = new THREE.SphereGeometry(0.025, 6, 6);
+    const pedUpperLegGeo = new THREE.CylinderGeometry(0.055, 0.045, 0.38);
+    pedUpperLegGeo.translate(0, -0.19, 0); // pivot at hip
+    const pedLowerLegGeo = new THREE.CylinderGeometry(0.045, 0.035, 0.36);
+    pedLowerLegGeo.translate(0, -0.18, 0); // pivot at knee
+    const pedShoeGeo = new THREE.BoxGeometry(0.07, 0.035, 0.11);
 
     for (const cw of cws) {
       for (let i = 0; i < 8; i++) {
         const color = ['#f87171', '#60a5fa', '#34d399', '#fbbf24', '#e2e8f0', '#c084fc'][Math.floor(Math.random() * 6)]!;
         const skinColor = ['#fca5a5', '#fdba74', '#d4a373', '#8b5a2b', '#3e2723'][Math.floor(Math.random() * 5)]!;
+        const pantsColor = ['#1e293b', '#292524', '#1c1917', '#334155', '#3f3f46'][Math.floor(Math.random() * 5)]!;
+        const shoeColor = ['#1a1a1a', '#292524', '#78350f'][Math.floor(Math.random() * 3)]!;
         
         const shirtMat = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
         const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.6 });
-        const pantsMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.9 });
+        const pantsMat = new THREE.MeshStandardMaterial({ color: pantsColor, roughness: 0.9 });
+        const shoeMat = new THREE.MeshStandardMaterial({ color: shoeColor, roughness: 0.9 });
+
+        // Height variation: 0.92 - 1.08 scale
+        const heightScale = 0.92 + Math.random() * 0.16;
         
         const group = new THREE.Group();
-        
-        const head = new THREE.Mesh(headGeo, skinMat);
-        head.position.y = 0.85;
+        group.scale.setScalar(heightScale);
+
+        // Head
+        const head = new THREE.Mesh(pedHeadGeo, skinMat);
+        head.position.y = 1.56;
+        head.castShadow = true;
         group.add(head);
+
+        // Neck
+        const neck = new THREE.Mesh(pedNeckGeo, skinMat);
+        neck.position.y = 1.43;
+        group.add(neck);
         
-        const torso = new THREE.Mesh(torsoGeo, shirtMat);
-        torso.position.y = 0.5;
+        // Torso
+        const torso = new THREE.Mesh(pedTorsoGeo, shirtMat);
+        torso.position.y = 1.16;
+        torso.castShadow = true;
         group.add(torso);
-        
-        const armL = new THREE.Mesh(limbGeo, skinMat);
-        armL.position.set(0.18, 0.65, 0);
-        group.add(armL);
-        
-        const armR = new THREE.Mesh(limbGeo, skinMat);
-        armR.position.set(-0.18, 0.65, 0);
-        group.add(armR);
-        
-        const legL = new THREE.Mesh(limbGeo, pantsMat);
-        legL.position.set(0.08, 0.35, 0);
-        group.add(legL);
-        
-        const legR = new THREE.Mesh(limbGeo, pantsMat);
-        legR.position.set(-0.08, 0.35, 0);
-        group.add(legR);
-        
+
+        // Hips
+        const hips = new THREE.Mesh(pedHipsGeo, pantsMat);
+        hips.position.y = 0.89;
+        group.add(hips);
+
+        // --- Left Arm (hierarchical: shoulder → upper arm → forearm → hand) ---
+        const armLGroup = new THREE.Group(); // pivot at shoulder
+        armLGroup.position.set(0.17, 1.35, 0);
+        const upperArmL = new THREE.Mesh(pedUpperArmGeo, shirtMat);
+        armLGroup.add(upperArmL);
+        const forearmLGroup = new THREE.Group(); // pivot at elbow
+        forearmLGroup.position.set(0, -0.26, 0);
+        const forearmL = new THREE.Mesh(pedForearmGeo, skinMat);
+        forearmLGroup.add(forearmL);
+        const handL = new THREE.Mesh(pedHandGeo, skinMat);
+        handL.position.set(0, -0.22, 0);
+        forearmLGroup.add(handL);
+        armLGroup.add(forearmLGroup);
+        group.add(armLGroup);
+
+        // --- Right Arm ---
+        const armRGroup = new THREE.Group();
+        armRGroup.position.set(-0.17, 1.35, 0);
+        const upperArmR = new THREE.Mesh(pedUpperArmGeo, shirtMat);
+        armRGroup.add(upperArmR);
+        const forearmRGroup = new THREE.Group();
+        forearmRGroup.position.set(0, -0.26, 0);
+        const forearmR = new THREE.Mesh(pedForearmGeo, skinMat);
+        forearmRGroup.add(forearmR);
+        const handR = new THREE.Mesh(pedHandGeo, skinMat);
+        handR.position.set(0, -0.22, 0);
+        forearmRGroup.add(handR);
+        armRGroup.add(forearmRGroup);
+        group.add(armRGroup);
+
+        // --- Left Leg (hierarchical: hip → upper leg → lower leg → foot) ---
+        const legLGroup = new THREE.Group(); // pivot at hip joint
+        legLGroup.position.set(0.07, 0.83, 0);
+        const upperLegL = new THREE.Mesh(pedUpperLegGeo, pantsMat);
+        upperLegL.castShadow = true;
+        legLGroup.add(upperLegL);
+        const lowerLegLGroup = new THREE.Group(); // pivot at knee
+        lowerLegLGroup.position.set(0, -0.38, 0);
+        const lowerLegL = new THREE.Mesh(pedLowerLegGeo, pantsMat);
+        lowerLegLGroup.add(lowerLegL);
+        const footL = new THREE.Mesh(pedShoeGeo, shoeMat);
+        footL.position.set(0, -0.36, 0.03);
+        lowerLegLGroup.add(footL);
+        legLGroup.add(lowerLegLGroup);
+        group.add(legLGroup);
+
+        // --- Right Leg ---
+        const legRGroup = new THREE.Group();
+        legRGroup.position.set(-0.07, 0.83, 0);
+        const upperLegR = new THREE.Mesh(pedUpperLegGeo, pantsMat);
+        upperLegR.castShadow = true;
+        legRGroup.add(upperLegR);
+        const lowerLegRGroup = new THREE.Group();
+        lowerLegRGroup.position.set(0, -0.38, 0);
+        const lowerLegR = new THREE.Mesh(pedLowerLegGeo, pantsMat);
+        lowerLegRGroup.add(lowerLegR);
+        const footR = new THREE.Mesh(pedShoeGeo, shoeMat);
+        footR.position.set(0, -0.36, 0.03);
+        lowerLegRGroup.add(footR);
+        legRGroup.add(lowerLegRGroup);
+        group.add(legRGroup);
+
         group.castShadow = true;
         this.environmentGroup.add(group);
         
         this.peds.push({
-          mesh: group, cw,
-          armL, armR, legL, legR,
+          mesh: group, cw, head, torso,
+          armL: armLGroup, armR: armRGroup,
+          forearmL: forearmLGroup, forearmR: forearmRGroup,
+          legL: legLGroup, legR: legRGroup,
+          lowerLegL: lowerLegLGroup, lowerLegR: lowerLegRGroup,
           x: cw.horizontal ? cw.x1 + Math.random()*(cw.x2-cw.x1) : cw.x1 + Math.random()*(cw.x2-cw.x1),
           z: cw.horizontal ? cw.z1 + Math.random()*(cw.z2-cw.z1) : cw.z1 + Math.random()*(cw.z2-cw.z1),
           dir: Math.random() > 0.5 ? 1 : -1,
