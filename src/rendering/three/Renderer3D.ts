@@ -1486,6 +1486,19 @@ export class Renderer3D {
         canCross = allRed;
       }
 
+      // Vehicle collision avoidance — prevent pedestrians walking through cars
+      let blockedByVehicle = false;
+      for (const [, vMesh] of this.vehicleMeshes) {
+        const dx = p.x - vMesh.position.x;
+        const dz = p.z - vMesh.position.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        // Vehicle bounding radius + pedestrian radius + safety margin
+        if (dist < 3.0) {
+          blockedByVehicle = true;
+          break;
+        }
+      }
+
       let isAtEdge = false;
       const active = engine.getSnapshot().isRunning;
       
@@ -1493,7 +1506,7 @@ export class Renderer3D {
       if (p.cw.horizontal) {
         if (p.dir === 1 && p.x <= p.cw.x1 + 1) isAtEdge = true;
         if (p.dir === -1 && p.x >= p.cw.x2 - 1) isAtEdge = true;
-        if (!isAtEdge || canCross) {
+        if ((!isAtEdge || canCross) && !blockedByVehicle) {
             p.x += p.dir * p.speed * dt * (active ? 1 : 0);
             moved = active;
         }
@@ -1504,7 +1517,7 @@ export class Renderer3D {
       } else {
         if (p.dir === 1 && p.z <= p.cw.z1 + 1) isAtEdge = true;
         if (p.dir === -1 && p.z >= p.cw.z2 - 1) isAtEdge = true;
-        if (!isAtEdge || canCross) {
+        if ((!isAtEdge || canCross) && !blockedByVehicle) {
             p.z += p.dir * p.speed * dt * (active ? 1 : 0);
             moved = active;
         }
