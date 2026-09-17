@@ -269,8 +269,12 @@ export class Renderer3D {
         const a = engine.network.toAngle(light.controlledLaneIds[0]!, light.stopPosition);
         if (!p) continue;
         
-        const perpX = -Math.sin(a) * 3.5;
-        const perpY = Math.cos(a) * 3.5;
+        // Dynamic offset: compute from number of lanes to push pole beyond road edge
+        // Each lane is ~3.5m wide. Place pole at (laneCount * 3.5 + curbMargin) from lane-0 center
+        const laneCount = Math.max(1, light.controlledLaneIds.length);
+        const poleOffset = laneCount * 3.5 + 1.5; // 1.5m curb/sidewalk margin
+        const perpX = -Math.sin(a) * poleOffset;
+        const perpY = Math.cos(a) * poleOffset;
         
         const poleGroup = new THREE.Group();
         poleGroup.position.set(p.x + perpX, 0, p.y + perpY);
@@ -315,6 +319,41 @@ export class Renderer3D {
     }
   }
 
+  private isNearRoadOrIntersection(x: number, z: number, margin: number, engine: SimulationEngine): boolean {
+    // Check all intersections
+    for (const ix of engine.network.getAllIntersections()) {
+      const dx = x - ix.position.x;
+      const dz = z - ix.position.y;
+      const r = ix.size / 2 + margin;
+      if (dx * dx + dz * dz < r * r) return true;
+    }
+
+    // Check all lane segments
+    for (const lane of engine.network.getAllLanes()) {
+      for (let i = 0; i < lane.waypoints.length - 1; i++) {
+        const p1 = lane.waypoints[i]!;
+        const p2 = lane.waypoints[i + 1]!;
+        
+        const vx = p2.x - p1.x;
+        const vy = p2.y - p1.y;
+        const wx = x - p1.x;
+        const wy = z - p1.y;
+        
+        const c1 = wx * vx + wy * vy;
+        const c2 = vx * vx + vy * vy;
+        let t = 0;
+        if (c2 > 0) t = Math.max(0, Math.min(1, c1 / c2));
+        
+        const projX = p1.x + t * vx;
+        const projY = p1.y + t * vy;
+        const distSq = (x - projX) * (x - projX) + (z - projY) * (z - projY);
+        
+        if (distSq < margin * margin) return true;
+      }
+    }
+    return false;
+  }
+
   private trafficOfficer: THREE.Group | null = null;
 
   private generateEnvironment(engine: SimulationEngine) {
@@ -323,7 +362,7 @@ export class Renderer3D {
       ? ['#65a30d', '#a3e635', '#4d7c0f', '#ca8a04']
       : ['#4ade80', '#22c55e', '#16a34a', '#15803d'];
 
-    // 1. Trees
+    // 1. Trees — dynamic road-clearance test
     const trunkGeo = new THREE.CylinderGeometry(0.3, 0.4, 3);
     const trunkMat = new THREE.MeshStandardMaterial({ color: '#3e2723', roughness: 0.9 });
     const canopyGeo = new THREE.DodecahedronGeometry(2.5, 1);
@@ -332,7 +371,7 @@ export class Renderer3D {
     for (let i = 0; i < treeCount; i++) {
       const x = (Math.random() - 0.5) * 300;
       const z = (Math.random() - 0.5) * 300;
-      if (Math.abs(x) < 14 || Math.abs(z) < 14) continue;
+      if (this.isNearRoadOrIntersection(x, z, 5.0, engine)) continue;
       
       const tree = new THREE.Group();
       tree.position.set(x, 0, z);
@@ -355,7 +394,7 @@ export class Renderer3D {
       this.environmentGroup.add(tree);
     }
 
-    // Bushes
+    // Bushes — dynamic road-clearance test
     const bushGeo = new THREE.SphereGeometry(0.8, 8, 8);
     const bushCount = Math.floor(90 * (env?.vegetationDensity ?? 1.0));
     for(let i=0; i<bushCount; i++) {
@@ -364,14 +403,14 @@ export class Renderer3D {
         const bush = new THREE.Mesh(bushGeo, bushMat);
         const bx = (Math.random()-0.5)*200;
         const bz = (Math.random()-0.5)*200;
-        if(Math.abs(bx) < 10 || Math.abs(bz) < 10) continue;
+        if (this.isNearRoadOrIntersection(bx, bz, 3.5, engine)) continue;
         bush.position.set(bx, 0.4, bz);
         bush.scale.set(1, 0.8 + Math.random()*0.5, 1);
         bush.castShadow = true;
         this.environmentGroup.add(bush);
     }
 
-    // Lamp posts
+    // Lamp posts — dynamic road-clearance test
     const lampGeo = new THREE.CylinderGeometry(0.05, 0.1, 5);
     const lampMat = new THREE.MeshStandardMaterial({ color: '#222', metalness: 0.5 });
     const lampGlowGeo = new THREE.SphereGeometry(0.3);
@@ -381,7 +420,7 @@ export class Renderer3D {
         const lamp = new THREE.Group();
         const lx = (Math.random()-0.5)*180;
         const lz = (Math.random()-0.5)*180;
-        if(Math.abs(lx) < 8 || Math.abs(lz) < 8) continue;
+        if (this.isNearRoadOrIntersection(lx, lz, 3.0, engine)) continue;
         lamp.position.set(lx, 0, lz);
         
         const pole = new THREE.Mesh(lampGeo, lampMat);
@@ -395,7 +434,7 @@ export class Renderer3D {
         this.environmentGroup.add(lamp);
     }
 
-    // Park benches
+    // Park benches — dynamic road-clearance test
     const benchGroup = new THREE.Group();
     const seatGeo = new THREE.BoxGeometry(2, 0.1, 0.8);
     const legGeo = new THREE.BoxGeometry(0.1, 0.5, 0.8);
@@ -417,13 +456,16 @@ export class Renderer3D {
     benchGroup.add(leg2);
     
     for(let i=0; i<15; i++) {
+        const bx = (Math.random()-0.5)*150;
+        const bz = (Math.random()-0.5)*150;
+        if (this.isNearRoadOrIntersection(bx, bz, 4.0, engine)) continue;
         const b = benchGroup.clone();
-        b.position.set((Math.random()-0.5)*150, 0, (Math.random()-0.5)*150);
+        b.position.set(bx, 0, bz);
         b.rotation.y = Math.random() * Math.PI * 2;
         this.environmentGroup.add(b);
     }
 
-    // 2. Buildings
+    // 2. Buildings — dynamic road-clearance test
     const bLayouts = [
       { x: -50, z: -50, w: 25, d: 25, h: 15 }, { x: -20, z: -60, w: 12, d: 20, h: 25 },
       { x: -70, z: -20, w: 20, d: 12, h: 10 }, { x: 25, z: -50, w: 30, d: 25, h: 20 },
@@ -433,6 +475,7 @@ export class Renderer3D {
       { x: 70, z: -80, w: 40, d: 30, h: 28 }
     ];
     for (const b of bLayouts) {
+      if (this.isNearRoadOrIntersection(b.x, b.z, Math.max(b.w, b.d) * 0.6, engine)) continue;
       const bGroup = new THREE.Group();
       bGroup.position.set(b.x, b.h / 2, b.z);
       
@@ -506,7 +549,7 @@ export class Renderer3D {
       { lightLanes: ['s-in'], horizontal: true, x1: -5.5, x2: 5.5, z1: 5.5, z2: 7.5 },
       { lightLanes: ['e-in-0', 'e-in-1'], horizontal: false, x1: 5.5, x2: 7.5, z1: -5.5, z2: 5.5 },
       { lightLanes: ['w-in-0', 'w-in-1'], horizontal: false, x1: -7.5, x2: -5.5, z1: -5.5, z2: 5.5 },
-    ];
+    ].filter(cw => cw.lightLanes.some(lId => engine.network.getLane(lId) !== undefined));
 
     // Shared geometries for all pedestrians
     const pedHeadGeo = new THREE.SphereGeometry(0.10, 12, 10);
@@ -1602,6 +1645,23 @@ export class Renderer3D {
             this.controls.target.lerp(vMesh.position, 0.06);
           }
         }
+      } else if ((engine as any).officerDirectingTraffic) {
+        // Active Congestion Clearing: Officer steps out toward intersection and directs traffic!
+        this.trafficOfficer.position.lerp(new THREE.Vector3(3.5, 0, 3.5), 0.05);
+        this.trafficOfficer.rotation.y = Math.sin(now * 0.003) * 0.6;
+        if (this.whistleWave) {
+          const pulse = (now * 0.007) % 1;
+          this.whistleWave.scale.setScalar(0.8 + pulse * 2.2);
+          (this.whistleWave.material as THREE.MeshBasicMaterial).opacity = (1 - pulse) * 0.7;
+        }
+        if (this.officerArmWave) {
+          // Dynamic arm wave directing vehicles through the intersection
+          this.officerArmWave.rotation.x = -Math.PI / 3 + Math.sin(now * 0.012) * 0.6;
+          this.officerArmWave.rotation.z = Math.cos(now * 0.012) * 0.35;
+        }
+        if (this.officerArmWhistle) {
+          this.officerArmWhistle.rotation.x = -Math.PI / 2.3 + Math.sin(now * 0.008) * 0.25;
+        }
       } else {
         // Return to curb post when no violators
         this.trafficOfficer.position.lerp(new THREE.Vector3(6.5, 0, 6.5), 0.03);
@@ -1621,9 +1681,8 @@ export class Renderer3D {
       this.selectionBeacon.visible = false;
     }
 
-    // 2. Traffic Lights
-    const ix = engine.network.getIntersection('ix');
-    if (ix) {
+    // 2. Traffic Lights — iterate ALL intersections, not just 'ix'
+    for (const ix of engine.network.getAllIntersections()) {
       for (const light of ix.lights) {
         const mats = this.lightMaterials.get(light.id);
         if (mats) {
@@ -1658,13 +1717,16 @@ export class Renderer3D {
     // 4. Pedestrians — Strict Signal Exclusivity (Walk ONLY when road signal is RED)
     for (const p of this.peds) {
       let isTrafficRedForVehicles = false;
-      if (ix) {
+      {
         let allRed = true;
         for (const laneName of p.cw.lightLanes) {
-          for (const l of ix.lights) {
-            if (l.controlledLaneIds.includes(laneName)) {
-              if (l.state !== LightState.Red) { allRed = false; break; }
+          for (const ixn of engine.network.getAllIntersections()) {
+            for (const l of ixn.lights) {
+              if (l.controlledLaneIds.includes(laneName)) {
+                if (l.state !== LightState.Red) { allRed = false; break; }
+              }
             }
+            if (!allRed) break;
           }
           if (!allRed) break;
         }
