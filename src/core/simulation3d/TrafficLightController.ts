@@ -114,6 +114,8 @@ export class TrafficLightController {
   }
 
   lightState(ix: Intersection, laneId: string): LightState {
+    // Unsignalized intersections (e.g. roundabouts) — treat as yield (always green)
+    if (ix.lights.length === 0) return LightState.Green;
     for (const l of ix.lights) {
       if (l.controlledLaneIds.includes(laneId)) return l.state;
     }
@@ -125,5 +127,30 @@ export class TrafficLightController {
       if (l.controlledLaneIds.includes(laneId)) return l.stopPosition;
     }
     return null;
+  }
+
+  /**
+   * Emergency congestion flush: force green on the specified lane's phase
+   * to clear a traffic jam. Temporarily overrides Webster's timing.
+   */
+  flushCongestion(ix: Intersection, congestedLaneId: string): boolean {
+    if (ix.lights.length === 0) return false; // unsignalized
+
+    // Find which phase controls the congested lane
+    for (let i = 0; i < ix.phases.length; i++) {
+      const phase = ix.phases[i]!;
+      const controlsLane = phase.greenGroups.some(grp => grp.includes(congestedLaneId));
+      if (controlsLane && ix.currentPhase !== i) {
+        // Force switch to this phase immediately
+        ix.currentPhase = i;
+        ix.phaseTimer = 0;
+        ix.inYellow = false;
+        this.applyPhase(ix);
+        // Give extra green time for clearing
+        phase.duration = Math.max(phase.duration, 20);
+        return true;
+      }
+    }
+    return false;
   }
 }
