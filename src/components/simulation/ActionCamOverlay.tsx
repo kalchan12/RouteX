@@ -95,7 +95,7 @@ export const ActionCamOverlay: React.FC = () => {
               No traffic rule violations recorded yet. Speeding or running red lights will be cited!
             </div>
           ) : (
-            citations.slice(-6).reverse().map((c) => (
+            citations.slice(-3).reverse().map((c) => (
               <div
                 key={c.id}
                 className="bg-surface-container/70 border border-outline-variant/30 rounded-lg p-2 font-mono text-[11px] flex flex-col gap-1 hover:border-cyan-500/40 transition-colors"
