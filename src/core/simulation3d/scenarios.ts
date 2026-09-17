@@ -247,25 +247,25 @@ export function createPostaBetScenario(): Scenario {
 
   eIn.connections = [{ toLaneId: 'rot-e', toRoadId: 'r-rot-e', turnType: 'right' }];
   rotEast.connections = [
-    { toLaneId: 'nOut', toRoadId: 'r-pb-n-out', turnType: 'right' },
+    { toLaneId: 'pb-n-out', toRoadId: 'r-pb-n-out', turnType: 'right' },
     { toLaneId: 'rot-n', toRoadId: 'r-rot-n', turnType: 'straight' },
   ];
 
   nIn.connections = [{ toLaneId: 'rot-n', toRoadId: 'r-rot-n', turnType: 'right' }];
   rotNorth.connections = [
-    { toLaneId: 'wOut', toRoadId: 'r-pb-w-out', turnType: 'right' },
+    { toLaneId: 'pb-w-out', toRoadId: 'r-pb-w-out', turnType: 'right' },
     { toLaneId: 'rot-w', toRoadId: 'r-rot-w', turnType: 'straight' },
   ];
 
   wIn.connections = [{ toLaneId: 'rot-w', toRoadId: 'r-rot-w', turnType: 'right' }];
   rotWest.connections = [
-    { toLaneId: 'sOut', toRoadId: 'r-pb-s-out', turnType: 'right' },
+    { toLaneId: 'pb-s-out', toRoadId: 'r-pb-s-out', turnType: 'right' },
     { toLaneId: 'rot-s', toRoadId: 'r-rot-s', turnType: 'straight' },
   ];
 
   sIn.connections = [{ toLaneId: 'rot-s', toRoadId: 'r-rot-s', turnType: 'right' }];
   rotSouth.connections = [
-    { toLaneId: 'eOut', toRoadId: 'r-pb-e-out', turnType: 'right' },
+    { toLaneId: 'pb-e-out', toRoadId: 'r-pb-e-out', turnType: 'right' },
     { toLaneId: 'rot-e', toRoadId: 'r-rot-e', turnType: 'straight' },
   ];
 
