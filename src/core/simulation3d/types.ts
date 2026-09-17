@@ -246,6 +246,7 @@ export interface SimulationSnapshot {
     isDriverSteppedOut: boolean;
     telebirrCode?: string;
   } | null;
+  officerDirectingTraffic?: boolean;
   activeAlgorithm?: string;
 }
 

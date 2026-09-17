@@ -76,6 +76,9 @@ export class SimulationEngine {
     isDriverSteppedOut: boolean;
     telebirrCode?: string;
   } | null = null;
+  public officerDirectingTraffic = false;
+  private congestionCheckTimer = 0;
+  private officerCongestionTimer = 0;
 
   load(scenario: Scenario): void {
     this.currentScenario = scenario;
@@ -91,6 +94,9 @@ export class SimulationEngine {
     this.trafficSpikeTimer = 0;
     this.trafficSpikeMultiplier = 1.0;
     this.activeEncounter = null;
+    this.officerDirectingTraffic = false;
+    this.congestionCheckTimer = 0;
+    this.officerCongestionTimer = 0;
     this.rng = createRNG(scenario.seed);
 
     for (const r of scenario.roads) this.network.addRoad(r);
@@ -240,6 +246,47 @@ export class SimulationEngine {
     // 1. Traffic lights
     for (const ix of this.network.getAllIntersections()) this.traffic.update(ix, dt, all);
 
+    // 1.1. Congestion Monitoring & Officer Clearing Intervention
+    this.congestionCheckTimer += dt;
+    if (this.officerCongestionTimer > 0) {
+      this.officerCongestionTimer -= dt;
+      if (this.officerCongestionTimer <= 0) {
+        this.officerDirectingTraffic = false;
+      }
+    }
+
+    if (this.congestionCheckTimer >= 2.0) {
+      this.congestionCheckTimer = 0;
+      if (!this.activeEncounter) {
+        for (const ix of this.network.getAllIntersections()) {
+          for (const road of this.network.getAllRoads()) {
+            if (road.endIntersectionId === ix.id) {
+              for (const lane of road.lanes) {
+                const laneVehs = this.network.laneVehicles(lane.id);
+                const stoppedCount = laneVehs.filter(v => v.speed < 1.0 && !v.isPulledOver && !v.isCrashed).length;
+                if (stoppedCount >= 3) {
+                  const flushed = this.traffic.flushCongestion(ix, lane.id);
+                  if (flushed) {
+                    this.officerDirectingTraffic = true;
+                    this.officerCongestionTimer = 10;
+                    // Encourage stopped vehicles to proceed
+                    for (const v of laneVehs) {
+                      if (v.speed < 0.5 && !v.isPulledOver && !v.isCrashed) {
+                        v.speed = Math.min(v.desiredSpeed, 2.5);
+                      }
+                    }
+                    break;
+                  }
+                }
+              }
+            }
+            if (this.officerDirectingTraffic) break;
+          }
+          if (this.officerDirectingTraffic) break;
+        }
+      }
+    }
+
     // 2. Spawning
     this.processSpawners(dt);
 
@@ -301,13 +348,20 @@ export class SimulationEngine {
       }
     }
 
-    // 4.6. Crash & Fender-Bender Physics
+    // 4.6. Crash & Fender-Bender Physics — robust collision detection
     for (const v of all) {
-      if (!v.isCrashed && v.speed > 6.0) {
-        const leader = this.network.getLeader(v);
-        if (leader && !leader.isCrashed) {
-          const gap = leader.position - v.position - (leader.length / 2) - (v.length / 2);
-          if (gap < 0.25 && (v.speed - leader.speed) > 4.5) {
+      if (v.isCrashed) continue;
+      const leader = this.network.getLeader(v);
+      if (leader && !leader.isCrashed) {
+        const gap = leader.position - v.position - (leader.length / 2) - (v.length / 2);
+        // Hard overlap prevention: if gap is negative, vehicles are physically overlapping
+        if (gap < 0.15) {
+          // Snap back to avoid visual pass-through regardless of speed
+          v.position = leader.position - (leader.length / 2) - (v.length / 2) - 0.15;
+          v.speed = Math.min(v.speed, leader.speed);
+
+          // Actual crash: only if closing speed is significant
+          if (v.speed > 2.0 && (v.speed - leader.speed) > 1.5) {
             v.isCrashed = true;
             leader.isCrashed = true;
             v.speed = 0;
@@ -335,7 +389,11 @@ export class SimulationEngine {
     for (const v of all) {
       if (v.violation && !v.violation.ticketIssued && !v.isPulledOver && !v.isCrashed) {
         v.isPulledOver = true;
-        v.pullOverTimer = 18; // 18-second cinematic encounter
+        // Variable encounter duration based on violation severity
+        const encounterDurations: Record<string, number> = {
+          'crash': 14, 'red_light': 10, 'pedestrian_hazard': 10, 'speeding': 7
+        };
+        v.pullOverTimer = encounterDurations[v.violation.type] ?? 8;
         v.hasHazardLights = true;
         v.speed = 0;
         v.violation.ticketIssued = true;
@@ -550,7 +608,14 @@ export class SimulationEngine {
     }
 
     if (leader) {
-      const gap = leader.position - v.position - (leader.length / 2) - (v.length / 2);
+      let gap = leader.position - v.position - (leader.length / 2) - (v.length / 2);
+      // Enforce minimum physical gap — vehicles cannot occupy the same space
+      const minGap = 0.5;
+      if (gap < minGap) {
+        v.position = leader.position - (leader.length / 2) - (v.length / 2) - minGap;
+        gap = minGap;
+        v.speed = Math.min(v.speed, leader.speed);
+      }
       const dv = v.speed - leader.speed;
       
       if (obstacleGap < gap && obstacleGap > 0) {
@@ -597,8 +662,11 @@ export class SimulationEngine {
             time: this.simTime,
           };
         } else {
-          v.position = lane.length;
-          v.speed = 0;
+          // Gradual stop: clamp to stop line with safe braking, not instant teleport
+          const safeStopPos = lane.length - (v.length * 0.5 + 0.5);
+          v.position = Math.min(v.position, safeStopPos);
+          v.speed = Math.max(0, v.speed - 8 * (1 / 60)); // decelerate at max brake rate
+          if (v.speed < 0.1) v.speed = 0;
           return true;
         }
       }
@@ -615,9 +683,29 @@ export class SimulationEngine {
 
     // Gap acceptance (emergency vehicles have high assertiveness)
     if (v.type !== VehicleType.Emergency && !canSafelyTurn(v, lane, targetLane, this.network, conn.turnType)) {
-      v.position = lane.length;
+      v.position = lane.length - (v.length * 0.5 + 0.5);
       v.speed = 0;
       return true; // Wait for gap
+    }
+
+    // Target lane entrance clearance: do not transition if a vehicle is already stopped at the entry
+    const targetVehicles = this.network.laneVehicles(targetLane.id);
+    if (targetVehicles.length > 0) {
+      let minPos = Infinity;
+      let closestVeh: VehicleState = targetVehicles[0]!;
+      for (const tv of targetVehicles) {
+        if (tv.position < minPos) {
+          minPos = tv.position;
+          closestVeh = tv;
+        }
+      }
+      const requiredClearance = (v.length + closestVeh.length) / 2 + 1.5;
+      if (minPos < requiredClearance) {
+        // Target lane entrance is blocked! Hold vehicle safely before stop line
+        v.position = lane.length - (v.length * 0.5 + 0.5);
+        v.speed = 0;
+        return true;
+      }
     }
 
     const over = v.position - lane.length;
@@ -777,6 +865,7 @@ export class SimulationEngine {
       citations: this.recentCitations,
       lastIncident: this.lastIncidentFocus,
       activeEncounter: this.activeEncounter,
+      officerDirectingTraffic: this.officerDirectingTraffic,
       activeAlgorithm: this.activeAlgorithm,
     };
   }
